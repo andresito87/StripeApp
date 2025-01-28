@@ -27,3 +27,7 @@ de Stripe en un proyecto React.
 - Cuando el usuario pulse en micropago, comprobar si tiene suficiente dinero en el monedero para realizarla, anotar la transacción.
 
 - Cuando el usuario solicite un reembolso, comprobar si Stripe permite automatizar esta acción o si es necesario realizarla de forma manual.
+
+## Imagen de la app
+
+[![StripeApp](./stipeApp.png)](./stipeApp.png)
