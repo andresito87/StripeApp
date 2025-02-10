@@ -12,8 +12,15 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        //
+        $middleware->group('api', [
+            \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class, // Necesario para Sanctum
+            \Illuminate\Session\Middleware\StartSession::class, // Habilita las sesiones en API
+            \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class, // Permite manejar cookies
+            \Illuminate\Routing\Middleware\ThrottleRequests::class, // Agrega el middleware correctamente
+            \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
-    })->create();
+    })
+    ->create();
