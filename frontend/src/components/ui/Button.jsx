@@ -1,7 +1,6 @@
 import PropTypes from "prop-types";
 import styled, { css } from "styled-components";
 
-// Estilos base para el botón
 const StyledButton = styled.button`
   padding: 0.5rem 1rem;
   border-radius: 0.5rem;
@@ -52,10 +51,9 @@ const StyledButton = styled.button`
     `}
 `;
 
-// Componente Button
 export const Button = ({
   children,
-  onClick,
+  onClick = () => {}, // 🔹 Si no se pasa `onClick`, no da error
   variant = "primary",
   disabled = false,
 }) => {
@@ -68,7 +66,7 @@ export const Button = ({
 
 Button.propTypes = {
   children: PropTypes.node.isRequired,
-  onClick: PropTypes.func.isRequired,
+  onClick: PropTypes.func, // 🔹 Ya no es requerido, porque tiene un valor por defecto
   variant: PropTypes.oneOf(["primary", "outline", "destructive"]),
   disabled: PropTypes.bool,
 };

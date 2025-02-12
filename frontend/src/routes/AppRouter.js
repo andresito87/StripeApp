@@ -1,26 +1,24 @@
 import React from "react";
 import {
   BrowserRouter as Router,
-  Routes,
   Route,
+  Routes,
   Navigate,
 } from "react-router-dom";
-import { AuthProvider, AuthContext } from "./context/AuthContext";
-import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-
+import Login from "../pages/Login";
+import Dashboard from "../pages/Dashboard";
+import { AuthProvider, AuthContext } from "../context/AuthContext";
 import PropTypes from "prop-types";
 
 const PrivateRoute = ({ children }) => {
   const { token } = React.useContext(AuthContext);
   return token ? children : <Navigate to="/login" />;
 };
-
 PrivateRoute.propTypes = {
   children: PropTypes.node.isRequired,
 };
 
-function App() {
+const AppRouter = () => {
   return (
     <AuthProvider>
       <Router>
@@ -39,6 +37,6 @@ function App() {
       </Router>
     </AuthProvider>
   );
-}
+};
 
-export default App;
+export default AppRouter;

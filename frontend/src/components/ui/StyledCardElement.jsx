@@ -1,11 +1,12 @@
-import { useState } from "react";
 import styled from "styled-components";
 import { CardElement } from "@stripe/react-stripe-js";
+import { useState } from "react";
 
 // Estilos personalizados para el contenedor de CardElement
 const StyledCardElementWrapper = styled.div`
-  padding: 16px 24px;
-  margin: 10px;
+  width: 100%;
+  max-width: 400px; /* Asegura que no se desborde */
+  padding: 12px;
   border: 2px solid ${(props) => (props.$isFocused ? "#007bff" : "#ccc")};
   border-radius: 8px;
   background-color: #fff;
@@ -22,7 +23,16 @@ const StyledCardElement = (props) => {
   return (
     <StyledCardElementWrapper $isFocused={isFocused}>
       <CardElement
-        {...props}
+        options={{
+          style: {
+            base: {
+              fontSize: "16px",
+              color: "#32325d",
+              "::placeholder": { color: "#aab7c4" },
+            },
+            invalid: { color: "#fa755a" },
+          },
+        }}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
       />

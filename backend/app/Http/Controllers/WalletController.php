@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+
 use Exception;
 use Illuminate\Http\Request;
 use App\Models\Wallet;
@@ -17,7 +18,7 @@ class WalletController extends Controller
     public function put(Request $request)
     {
         $request->validate([
-            'user_id' => 'required|exists:users,id_user',
+            'id_user' => 'required|exists:users,id_user',
             'amount' => 'required|numeric|min:1',
             'payment_method_id' => 'required|string'
         ]);
@@ -36,7 +37,7 @@ class WalletController extends Controller
 
             // 🔹 Asegurar que el monedero del usuario existe y tiene una descripción
             $wallet = Wallet::firstOrCreate(
-                ['id_user' => $request->user_id],
+                ['id_user' => $request->id_user],
                 [
                     'description' => 'Monedero',
                     'amount' => 0,
@@ -46,7 +47,7 @@ class WalletController extends Controller
 
             // 🔹 Registrar la transacción en la tabla wallet (PUSH)
             $transaction = Wallet::create([
-                'id_user' => $request->user_id,
+                'id_user' => $request->id_user,
                 'description' => 'Recarga de saldo',
                 'amount' => $request->amount,
                 'id_wallet_type' => 1, // PUT
@@ -84,7 +85,7 @@ class WalletController extends Controller
     public function pop(Request $request)
     {
         $request->validate([
-            'user_id' => 'required|exists:users,id_user',
+            'id_user' => 'required|exists:users,id_user',
             'amount' => 'required|numeric|min:1',
             'payment_intent_id' => 'required|string'
         ]);
@@ -93,7 +94,7 @@ class WalletController extends Controller
 
         try {
             // 🔹 Buscar el monedero del usuario
-            $wallet = Wallet::where('id_user', $request->user_id)->first();
+            $wallet = Wallet::where('id_user', $request->id_user)->first();
 
             if (!$wallet || $wallet->amount < $request->amount) {
                 return response()->json(['error' => 'Fondos insuficientes'], 400);
@@ -126,7 +127,7 @@ class WalletController extends Controller
 
             // 🔹 Registrar transacción en la tabla wallet (POP)
             $transaction = Wallet::create([
-                'id_user' => $request->user_id,
+                'id_user' => $request->id_user,
                 'description' => 'Reembolso parcial de saldo',
                 'amount' => -$request->amount, // Se almacena como negativo
                 'id_wallet_type' => 2, // POP
@@ -167,9 +168,12 @@ class WalletController extends Controller
      */
     public function getBalance(Request $request)
     {
-        $user = $request->user(); // Obtener el usuario autenticado
+        $user = auth('api')->user();
 
-        // Buscar el monedero del usuario autenticado
+        if (!$user) {
+            return response()->json(['error' => 'Usuario no autenticado'], 401);
+        }
+
         $wallet = Wallet::where('id_user', $user->id_user)->first();
 
         return response()->json([

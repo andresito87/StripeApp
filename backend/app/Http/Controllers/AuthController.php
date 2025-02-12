@@ -4,18 +4,31 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
+    private $jwt_secret;
+
+    public function __construct()
+    {
+        $this->jwt_secret = env('JWT_SECRET', 'tu_clave_secreta'); // Define la clave secreta
+    }
+
     public function register(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:6',
+            'password' => 'required|string|min:6'
         ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 400);
+        }
 
         $user = User::create([
             'name' => $request->name,
@@ -23,35 +36,63 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        return response()->json(['message' => 'Usuario registrado correctamente'], 201);
+        return response()->json(['message' => 'Usuario registrado con éxito'], 201);
     }
 
     public function login(Request $request)
     {
-        $credentials = $request->only('email', 'password');
+        $user = User::where('email', $request->email)->first();
 
-        if (!Auth::attempt($credentials)) {
-            return response()->json(['error' => 'No autorizado'], 401);
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return response()->json(['message' => 'Credenciales incorrectas'], 401);
         }
 
-        // 🔹 Usar request()->user() en lugar de Auth::user()
-        $user = $request->user();
+        $payload = [
+            'iss' => "miapilaravel", // Identificador del emisor
+            'sub' => $user->id_user, // ID del usuario
+            'iat' => time(), // Fecha de emisión
+            'exp' => time() + 60 * 60 // Expira en 1 hora
+        ];
 
-        // 🔹 Generar un token personal con Sanctum
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $token = JWT::encode($payload, $this->jwt_secret, 'HS256');
 
-        return response()->json([
-            'message' => 'Inicio de sesión exitoso',
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-            'user' => $user
-        ]);
+        $user->api_token = $token;
+        $user->save();
+
+        return response()->json(['token' => $token]);
     }
+
+    /**
+     * Cerrar sesión eliminando el token del usuario
+     */
     public function logout(Request $request)
     {
-        Auth::guard('web')->logout();
-        $request->session()->invalidate();
+        // 🔹 Eliminar el token del usuario autenticado
+        $request->user()->tokens()->delete();
+
         return response()->json(['message' => 'Sesión cerrada correctamente']);
     }
+
+    /**
+     * Obtener el usuario autenticado
+     */
+    public function user(Request $request)
+    {
+        $token = $request->bearerToken();
+
+        if (!$token) {
+            return response()->json(['message' => 'Token no proporcionado'], 401);
+        }
+
+        try {
+            $decoded = JWT::decode($token, new Key($this->jwt_secret, 'HS256'));
+            $user = User::find($decoded->sub);
+
+            return response()->json($user);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Token inválido'], 401);
+        }
+    }
+
 }
 
