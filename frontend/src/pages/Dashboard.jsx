@@ -59,12 +59,25 @@ const TransactionList = styled.ul`
 `;
 
 const TransactionItem = styled.li`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   padding: 10px;
   border-bottom: 1px solid #e5e7eb;
   color: #374151;
 
   &:last-child {
     border-bottom: none;
+  }
+`;
+
+const RefundButton = styled(Button)`
+  font-size: 0.75rem;
+  padding: 0.3rem 0.6rem;
+  background-color: #ef4444;
+  color: white;
+  &:hover {
+    background-color: #dc2626;
   }
 `;
 
@@ -96,8 +109,34 @@ const Dashboard = () => {
     }
   };
 
+  const handleRefund = async (transaction) => {
+    const confirm = window.confirm(
+      "¿Estás seguro de que deseas solicitar un reembolso?"
+    );
+    if (!confirm) return;
+
+    try {
+      const response = await api.post(`/wallet/pop`, {
+        id_user: user.id_user, // ID del usuario actual
+        amount: transaction.amount, // Monto de la transacción
+        payment_intent_id: transaction.id_transaction, // PaymentIntent requerido por la API
+      });
+
+      alert(response.data.message || "Reembolso solicitado con éxito");
+      fetchTransactions();
+      fetchBalance();
+    } catch (error) {
+      console.error("Error al solicitar reembolso:", error);
+      alert(
+        error.response?.data?.error ||
+          "Hubo un error al solicitar el reembolso."
+      );
+    }
+  };
+
   return (
     <DashboardContainer>
+      {/* Bloque de Saldo y Cerrar Sesión */}
       <Card>
         <Title>Bienvenido, {user?.name}</Title>
         <Balance>Saldo actual: €{balance}</Balance>
@@ -105,19 +144,28 @@ const Dashboard = () => {
           Cerrar Sesión
         </Button>
       </Card>
+
+      {/* Bloque de Formulario de Pago */}
       <Card>
         <Elements stripe={stripePromise}>
           <PaymentForm />
         </Elements>
       </Card>
+
+      {/* Bloque de Historial de Transacciones */}
       <TransactionsContainer>
         <Title>Historial de Transacciones</Title>
         <TransactionList>
           {transactions.length > 0 ? (
             transactions.map((tx) => (
               <TransactionItem key={tx.id_wallet}>
-                {tx.description} - €{tx.amount} -{" "}
-                {new Date(tx.date_create).toLocaleString()}
+                <span>
+                  {tx.description} - €{tx.amount} -{" "}
+                  {new Date(tx.date_create).toLocaleString()}
+                </span>
+                <RefundButton onClick={() => handleRefund(tx)}>
+                  Reembolso
+                </RefundButton>
               </TransactionItem>
             ))
           ) : (
