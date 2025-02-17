@@ -7,7 +7,6 @@ import PaymentForm from "../components/ui/PaymentForm";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 
-// 🔹 Carga la clave pública de Stripe desde .env
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 const DashboardContainer = styled.div`
@@ -99,7 +98,6 @@ const Dashboard = () => {
 
   return (
     <DashboardContainer>
-      {/* 🔹 Bloque Usuario y Saldo */}
       <Card>
         <Title>Bienvenido, {user?.name}</Title>
         <Balance>Saldo actual: €{balance}</Balance>
@@ -107,15 +105,11 @@ const Dashboard = () => {
           Cerrar Sesión
         </Button>
       </Card>
-
-      {/* 🔹 Bloque Formulario de Pago */}
       <Card>
         <Elements stripe={stripePromise}>
           <PaymentForm />
         </Elements>
       </Card>
-
-      {/* 🔹 Bloque Historial de Transacciones */}
       <TransactionsContainer>
         <Title>Historial de Transacciones</Title>
         <TransactionList>

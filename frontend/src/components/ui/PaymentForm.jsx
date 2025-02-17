@@ -45,32 +45,53 @@ const PaymentForm = () => {
     setLoading(true);
 
     try {
-      // 🔹 1. Crear el PaymentIntent en Laravel
+      // 1️⃣ Crear PaymentMethod en el cliente
+      const { error: pmError, paymentMethod } =
+        await stripe.createPaymentMethod({
+          type: "card",
+          card: elements.getElement(CardElement),
+          billing_details: {
+            email: user.email,
+            name: user.name,
+          },
+        });
+
+      if (pmError) {
+        alert(`Error al crear el método de pago: ${pmError.message}`);
+        setLoading(false);
+        return;
+      }
+
+      // 2️⃣ Enviar al servidor el paymentMethod.id para crear el PaymentIntent
       const response = await api.post("/wallet/put", {
-        id_user: user.id_user, // ID del usuario autenticado
-        amount: parseInt(amount), // Convertir cantidad a número
-        payment_method_id: elements.getElement(CardElement), // Token de pago de Stripe
+        id_user: user.id_user,
+        amount: parseInt(amount),
+        payment_method_id: paymentMethod.id,
       });
 
       const { clientSecret } = response.data;
-      if (!clientSecret) throw new Error("No se obtuvo el clientSecret");
 
-      // 🔹 2. Confirmar el pago con Stripe
+      if (!clientSecret) {
+        throw new Error("No se obtuvo el clientSecret");
+      }
+
+      // 3️⃣ Confirmar el pago en el cliente
       const { error, paymentIntent } = await stripe.confirmCardPayment(
         clientSecret,
         {
-          payment_method: {
-            card: elements.getElement(CardElement),
-            billing_details: { email: user.email },
-          },
+          payment_method: paymentMethod.id,
         }
       );
 
       if (error) {
-        alert("Error en el pago: " + error.message);
-      } else {
+        console.error("Error al confirmar el pago:", error);
+        alert(`Error al confirmar el pago: ${error.message}`);
+      } else if (paymentIntent?.status === "succeeded") {
         setPaymentId(paymentIntent.id);
         alert("Recarga exitosa!");
+      } else {
+        console.warn("El pago no se completó:", paymentIntent);
+        alert("Pago no completado");
       }
     } catch (error) {
       alert(
@@ -78,6 +99,7 @@ const PaymentForm = () => {
           error.response?.data?.error || error.message
         }`
       );
+      console.error("Error en la transacción:", error);
     } finally {
       setLoading(false);
     }

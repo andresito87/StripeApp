@@ -5,11 +5,13 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import { AuthProvider, AuthContext } from "./context/AuthContext";
+import { AuthContext } from "./context/AuthContext";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 
 import PropTypes from "prop-types";
+import Register from "./pages/Register";
+import { AuthProvider } from "./context/AuthProvider";
 
 const PrivateRoute = ({ children }) => {
   const { token } = React.useContext(AuthContext);
@@ -26,6 +28,7 @@ function App() {
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route
             path="/dashboard"
             element={

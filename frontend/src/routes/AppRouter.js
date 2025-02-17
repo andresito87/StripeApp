@@ -9,6 +9,7 @@ import Login from "../pages/Login";
 import Dashboard from "../pages/Dashboard";
 import { AuthProvider, AuthContext } from "../context/AuthContext";
 import PropTypes from "prop-types";
+import Register from "../pages/Register";
 
 const PrivateRoute = ({ children }) => {
   const { token } = React.useContext(AuthContext);
@@ -24,6 +25,7 @@ const AppRouter = () => {
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route
             path="/dashboard"
             element={

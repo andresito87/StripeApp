@@ -5,21 +5,20 @@ import styled from "styled-components";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 
-const LoginContainer = styled.div`
+const RegisterContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
   height: 100vh;
-  width: 100%;
-  background-color: #f3f4f6;
-  box-sizing: border-box;
+  width: 100vw;
+  background-color: #eef2f7;
 `;
 
-const LoginBox = styled.div`
+const RegisterBox = styled.div`
   background: white;
   padding: 2.5rem;
   border-radius: 12px;
-  box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.15);
+  box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);
   max-width: 400px;
   text-align: center;
 `;
@@ -29,12 +28,6 @@ const Title = styled.h1`
   font-weight: bold;
   color: #1f2937;
   margin-bottom: 1rem;
-`;
-
-const Subtitle = styled.p`
-  font-size: 1rem;
-  color: #4b5563;
-  margin-bottom: 1.5rem;
 `;
 
 const Form = styled.form`
@@ -59,27 +52,33 @@ const SwitchText = styled.p`
   }
 `;
 
-const Login = () => {
+const Register = () => {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { login } = useContext(AuthContext);
+  const { register } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await login(email, password);
+    await register({ name, email, password });
     navigate("/dashboard");
   };
 
   return (
-    <LoginContainer>
-      <LoginBox>
-        <Title>Bienvenido</Title>
-        <Subtitle>Inicia sesión para acceder a tu cuenta</Subtitle>
+    <RegisterContainer>
+      <RegisterBox>
+        <Title>Crear Cuenta</Title>
         <Form onSubmit={handleSubmit}>
           <Input
+            type="text"
+            placeholder="Nombre"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <Input
             type="email"
-            placeholder="Correo electrónico"
+            placeholder="Correo Electrónico"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -89,14 +88,14 @@ const Login = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <Button type="submit">Ingresar</Button>
+          <Button type="submit">Registrar</Button>
         </Form>
         <SwitchText>
-          ¿No tienes cuenta? <Link to="/register">Regístrate</Link>
+          ¿Ya tienes cuenta? <Link to="/login">Inicia sesión</Link>
         </SwitchText>
-      </LoginBox>
-    </LoginContainer>
+      </RegisterBox>
+    </RegisterContainer>
   );
 };
 
-export default Login;
+export default Register;

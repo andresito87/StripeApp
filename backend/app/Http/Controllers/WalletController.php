@@ -31,7 +31,7 @@ class WalletController extends Controller
                 'amount' => $request->amount * 100, // Convertir a centavos
                 'currency' => 'eur',
                 'payment_method' => $request->payment_method_id,
-                'confirm' => true,
+                'confirm' => false,
                 'payment_method_types' => ['card'] // Asegurar que solo usa tarjetas
             ]);
 
@@ -60,6 +60,7 @@ class WalletController extends Controller
 
             return response()->json([
                 'message' => 'Saldo añadido con éxito',
+                'clientSecret' => $paymentIntent->client_secret,
                 'wallet' => [
                     'id_wallet' => $wallet->id_wallet,
                     'id_user' => $wallet->id_user,
