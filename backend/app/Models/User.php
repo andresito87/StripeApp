@@ -8,6 +8,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Notifications\Notifiable;
 
+/**
+ * @property int $id_user
+ * @property string $name
+ * @property string $email
+ * @property string $password
+ * @property string $api_token
+ * @property string|null $google2fa_secret
+ * @property bool $google2fa_enabled
+ */
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
@@ -19,7 +28,9 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'api_token'
+        'api_token',
+        'google2fa_secret',
+        'google2fa_enabled'
     ];
 
     protected $hidden = [

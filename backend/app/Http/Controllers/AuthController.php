@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Illuminate\Support\Facades\Hash;
@@ -18,6 +18,9 @@ class AuthController extends Controller
         $this->jwt_secret = env('JWT_SECRET', 'tu_clave_secreta'); // Define la clave secreta
     }
 
+    /**
+     * Registro de un usuario
+     */
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -39,6 +42,9 @@ class AuthController extends Controller
         return response()->json(['message' => 'Usuario registrado con éxito'], 201);
     }
 
+    /**
+     * Acceso mediante jwt Token
+     */
     public function login(Request $request)
     {
         $user = User::where('email', $request->email)->first();
@@ -67,8 +73,23 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
-        // 🔹 Eliminar el token del usuario autenticado
-        $request->user()->tokens()->delete();
+        // Obtiene el ID del Middleware
+        $userId = $request->get('id_user');
+
+        if (!$userId) {
+            return response()->json(['message' => 'Usuario no autenticado'], 401);
+        }
+
+        // Busca al usuario por su ID
+        $user = User::find($userId);
+
+        if (!$user) {
+            return response()->json(['message' => 'Usuario no encontrado'], 404);
+        }
+
+        // Elimina el token
+        $user->api_token = null;
+        $user->save();
 
         return response()->json(['message' => 'Sesión cerrada correctamente']);
     }
@@ -93,6 +114,5 @@ class AuthController extends Controller
             return response()->json(['message' => 'Token inválido'], 401);
         }
     }
-
 }
 

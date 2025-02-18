@@ -20,12 +20,14 @@ class JwtMiddleware
 
         try {
             $decoded = JWT::decode($token, new Key(env('JWT_SECRET', 'tu_clave_secreta'), 'HS256'));
-            $request->attributes->add(['id_user' => $decoded->sub]);
+
+            // Solo pasa el `id_user`, no el objeto completo
+            $request->attributes->set('id_user', $decoded->sub);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Token inválido'], 401);
         }
 
         return $next($request);
     }
-}
 
+}
