@@ -8,6 +8,7 @@ use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use PragmaRX\Google2FA\Google2FA;
 
 class AuthController extends Controller
 {
@@ -47,17 +48,46 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'password' => 'required|string'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 400);
+        }
+
         $user = User::where('email', $request->email)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json(['message' => 'Credenciales incorrectas'], 401);
         }
 
+        if ($user->google2fa_enabled) {
+            // Generar un token temporal para 2FA (válido, por ejemplo, 5 minutos)
+            $payload = [
+                'iss' => "miapilaravel",
+                'sub' => $user->id_user,
+                'iat' => time(),
+                'exp' => time() + (5 * 60),
+                '2fa' => true
+            ];
+
+            $tempToken = JWT::encode($payload, $this->jwt_secret, 'HS256');
+
+            return response()->json([
+                '2fa_required' => true,
+                '2fa_token' => $tempToken,
+                'message' => 'Se requiere autenticación de dos factores'
+            ], 200);
+        }
+
+        // Si 2FA no está habilitado, genera el token JWT final
         $payload = [
-            'iss' => "miapilaravel", // Identificador del emisor
-            'sub' => $user->id_user, // ID del usuario
-            'iat' => time(), // Fecha de emisión
-            'exp' => time() + 60 * 60 // Expira en 1 hora
+            'iss' => "miapilaravel",
+            'sub' => $user->id_user,
+            'iat' => time(),
+            'exp' => time() + (60 * 60)
         ];
 
         $token = JWT::encode($payload, $this->jwt_secret, 'HS256');
@@ -65,8 +95,10 @@ class AuthController extends Controller
         $user->api_token = $token;
         $user->save();
 
-        return response()->json(['token' => $token]);
+        return response()->json(['token' => $token], 200);
     }
+
+
 
     /**
      * Cerrar sesión eliminando el token del usuario

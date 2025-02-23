@@ -20,8 +20,10 @@ return Application::configure(basePath: dirname(__DIR__))
             [
                 'jwt' => JwtMiddleware::class,
                 'session' => StartSession::class,
+                '2fa' => \PragmaRX\Google2FA\Google2FA::class,
             ]
         );
+        $middleware->append(StartSession::class);
 
     })
     ->withExceptions(function (Exceptions $exceptions) {
