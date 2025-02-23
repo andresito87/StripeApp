@@ -1,4 +1,5 @@
 import { useContext, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import api from "../services/api";
 import styled from "styled-components";
@@ -11,17 +12,14 @@ const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 const DashboardContainer = styled.div`
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  flex-direction: column; /* Forzar columna */
+  align-items: center;
   gap: 2rem;
   padding: 2rem;
   background-color: #f9fafb;
   min-height: 100vh;
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    align-items: center;
-  }
+  width: 100%;
+  box-sizing: border-box;
 `;
 
 const Card = styled.div`
@@ -30,7 +28,7 @@ const Card = styled.div`
   border-radius: 12px;
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
   width: 100%;
-  max-width: 400px;
+  max-width: none;
   text-align: center;
 `;
 
@@ -45,6 +43,11 @@ const Balance = styled.p`
   font-weight: bold;
   color: #10b981;
   margin-bottom: 1rem;
+`;
+
+const TwoFAContainer = styled(Card)`
+  width: 100%;
+  margin-top: 1rem;
 `;
 
 const TransactionsContainer = styled(Card)`
@@ -83,14 +86,11 @@ const RefundButton = styled(Button)`
 
 const Dashboard = () => {
   const { user, logout } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState([]);
 
-  useEffect(() => {
-    fetchBalance();
-    fetchTransactions();
-  }, []);
-
+  // Funciones para refrescar el estado
   const fetchBalance = async () => {
     try {
       const response = await api.get("/wallet/balance");
@@ -109,22 +109,29 @@ const Dashboard = () => {
     }
   };
 
+  useEffect(() => {
+    fetchBalance();
+    fetchTransactions();
+  }, []);
+
   const handleRefund = async (transaction) => {
-    const confirm = window.confirm(
+    const confirmRefund = window.confirm(
       "¿Estás seguro de que deseas solicitar un reembolso?"
     );
-    if (!confirm) return;
+    if (!confirmRefund) return;
 
     try {
       const response = await api.post(`/wallet/pop`, {
-        id_user: user.id_user, // ID del usuario actual
-        amount: transaction.amount, // Monto de la transacción
-        payment_intent_id: transaction.id_transaction, // PaymentIntent requerido por la API
+        id_user: user.id_user,
+        amount: transaction.amount,
+        payment_intent_id: transaction.id_transaction,
       });
 
       alert(response.data.message || "Reembolso solicitado con éxito");
-      fetchTransactions();
-      fetchBalance();
+
+      // Actualizamos balance y transacciones
+      await fetchBalance();
+      await fetchTransactions();
     } catch (error) {
       console.error("Error al solicitar reembolso:", error);
       alert(
@@ -132,6 +139,17 @@ const Dashboard = () => {
           "Hubo un error al solicitar el reembolso."
       );
     }
+  };
+
+  const handlePaymentSuccess = async () => {
+    await fetchBalance();
+    await fetchTransactions();
+  };
+
+  // Botón para activar 2FA (si no está habilitado)
+  const handleActivateTwoFA = () => {
+    console.log("Activando 2FA");
+    navigate("/2fa-activation");
   };
 
   return (
@@ -145,10 +163,19 @@ const Dashboard = () => {
         </Button>
       </Card>
 
+      {/* Bloque de Activación de 2FA */}
+      {user && !user.google2fa_enabled && (
+        <TwoFAContainer>
+          <Title>Seguridad</Title>
+          <p>Activa la autenticación de dos factores para mayor seguridad.</p>
+          <Button onClick={handleActivateTwoFA}>Activar 2FA</Button>
+        </TwoFAContainer>
+      )}
+
       {/* Bloque de Formulario de Pago */}
       <Card>
         <Elements stripe={stripePromise}>
-          <PaymentForm />
+          <PaymentForm onPaymentSuccess={handlePaymentSuccess} />
         </Elements>
       </Card>
 
@@ -163,9 +190,13 @@ const Dashboard = () => {
                   {tx.description} - €{tx.amount} -{" "}
                   {new Date(tx.date_create).toLocaleString()}
                 </span>
-                <RefundButton onClick={() => handleRefund(tx)}>
-                  Reembolso
-                </RefundButton>
+                {tx.id_wallet_type === 2 ? (
+                  <RefundButton disabled>Reembolsado</RefundButton>
+                ) : (
+                  <RefundButton onClick={() => handleRefund(tx)}>
+                    Reembolso
+                  </RefundButton>
+                )}
               </TransactionItem>
             ))
           ) : (

@@ -1,3 +1,4 @@
+// src/pages/Login.jsx
 import { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
@@ -31,16 +32,16 @@ const Title = styled.h1`
   margin-bottom: 1rem;
 `;
 
-const Subtitle = styled.p`
-  font-size: 1rem;
-  color: #4b5563;
-  margin-bottom: 1.5rem;
-`;
-
 const Form = styled.form`
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 1.2rem;
+`;
+
+const ErrorMessage = styled.p`
+  color: red;
+  font-size: 0.9rem;
 `;
 
 const SwitchText = styled.p`
@@ -62,38 +63,87 @@ const SwitchText = styled.p`
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { login } = useContext(AuthContext);
+  const [otp, setOtp] = useState("");
+  const [error, setError] = useState("");
+  const { login, verifyTwoFactor, isTwoFactorRequired, cancelTwoFactor } =
+    useContext(AuthContext);
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
+  // Login inicial con email y contraseña
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
+    setError("");
     await login(email, password);
-    navigate("/dashboard");
+    if (!isTwoFactorRequired) {
+      navigate("/dashboard");
+    }
+  };
+
+  // Verificación del OTP
+  const handleOtpSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    try {
+      await verifyTwoFactor(otp);
+      navigate("/dashboard");
+    } catch (err) {
+      setError(err.response?.data?.message || "Código OTP inválido");
+    }
+  };
+
+  // Función para cancelar el flujo de 2FA y reiniciar el login
+  const handleCancel = () => {
+    cancelTwoFactor();
+    setOtp("");
   };
 
   return (
     <LoginContainer>
       <LoginBox>
-        <Title>Bienvenido</Title>
-        <Subtitle>Inicia sesión para acceder a tu cuenta</Subtitle>
-        <Form onSubmit={handleSubmit}>
-          <Input
-            type="email"
-            placeholder="Correo electrónico"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <Input
-            type="password"
-            placeholder="Contraseña"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <Button type="submit">Ingresar</Button>
-        </Form>
-        <SwitchText>
-          ¿No tienes cuenta? <Link to="/register">Regístrate</Link>
-        </SwitchText>
+        <Title>Iniciar sesión</Title>
+        {!isTwoFactorRequired ? (
+          <Form onSubmit={handleLoginSubmit}>
+            <Input
+              type="email"
+              placeholder="Correo electrónico"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <Input
+              type="password"
+              placeholder="Contraseña"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <Button type="submit">Ingresar</Button>
+            {error && <ErrorMessage>{error}</ErrorMessage>}
+          </Form>
+        ) : (
+          <Form onSubmit={handleOtpSubmit}>
+            <Input
+              type="text"
+              placeholder="Código OTP"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              required
+            />
+            <Button type="submit">Verificar OTP</Button>
+            {error && <ErrorMessage>{error}</ErrorMessage>}
+          </Form>
+        )}
+        {!isTwoFactorRequired ? (
+          <SwitchText>
+            ¿No tienes cuenta? <Link to="/register">Regístrate</Link>
+          </SwitchText>
+        ) : (
+          <SwitchText>
+            <a onClick={handleCancel} style={{ cursor: "pointer" }}>
+              Volver al inicio de sesión
+            </a>
+          </SwitchText>
+        )}
       </LoginBox>
     </LoginContainer>
   );

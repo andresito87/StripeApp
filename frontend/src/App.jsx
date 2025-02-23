@@ -13,6 +13,8 @@ import PropTypes from "prop-types";
 import Register from "./pages/Register";
 import { AuthProvider } from "./context/AuthProvider";
 
+import TwoFactorActivation from "../src/pages/TwoFactorActivation";
+
 const PrivateRoute = ({ children }) => {
   const { token } = React.useContext(AuthContext);
   return token ? children : <Navigate to="/login" />;
@@ -37,6 +39,7 @@ function App() {
               </PrivateRoute>
             }
           />
+          <Route path="/2fa-activation" element={<TwoFactorActivation />} />
           <Route path="*" element={<Navigate to="/dashboard" />} />
         </Routes>
       </Router>

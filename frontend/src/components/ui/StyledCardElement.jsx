@@ -5,7 +5,6 @@ import { useState } from "react";
 // Estilos personalizados para el contenedor de CardElement
 const StyledCardElementWrapper = styled.div`
   width: 100%;
-  max-width: 400px; /* Asegura que no se desborde */
   padding: 12px;
   border: 2px solid ${(props) => (props.$isFocused ? "#007bff" : "#ccc")};
   border-radius: 8px;
@@ -17,7 +16,7 @@ const StyledCardElementWrapper = styled.div`
   transition: border-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
 `;
 
-const StyledCardElement = (props) => {
+const StyledCardElement = () => {
   const [isFocused, setIsFocused] = useState(false);
 
   return (

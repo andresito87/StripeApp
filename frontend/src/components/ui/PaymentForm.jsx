@@ -1,14 +1,13 @@
 import { useState, useContext } from "react";
+import PropTypes from "prop-types";
 import { useStripe, useElements, CardElement } from "@stripe/react-stripe-js";
 import styled from "styled-components";
-import { AuthContext } from "../../context/AuthContext"; // 🔹 Para obtener el usuario autenticado
-import api from "../../services/api"; // 🔹 Axios configurado
+import { AuthContext } from "../../context/AuthContext"; // Para obtener el usuario autenticado
+import api from "../../services/api"; // Axios configurado
 import { Button } from "./Button";
 import { Input } from "./Input";
 import StyledCardElement from "./StyledCardElement";
-import CardInfo from "./InfoBox";
 
-// Contenedor estilizado
 const PaymentContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -17,8 +16,8 @@ const PaymentContainer = styled.div`
   background: white;
   border-radius: 12px;
   box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.15);
-  max-width: 500px;
   width: 100%;
+  box-sizing: border-box;
 `;
 
 const Title = styled.h2`
@@ -28,24 +27,34 @@ const Title = styled.h2`
   margin-bottom: 1rem;
 `;
 
-const PaymentForm = () => {
+const Message = styled.p`
+  font-size: 1rem;
+  margin-top: 1rem;
+  color: ${(props) => (props.error ? "#ef4444" : "#10b981")};
+`;
+
+const PaymentForm = ({ onPaymentSuccess }) => {
   const [amount, setAmount] = useState("");
   const [paymentId, setPaymentId] = useState("");
   const [loading, setLoading] = useState(false);
-  const { user } = useContext(AuthContext); // 🔹 Obtener usuario autenticado
+  const [infoMessage, setInfoMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const { user } = useContext(AuthContext); // Obtener usuario autenticado
   const stripe = useStripe();
   const elements = useElements();
 
   const handleMicropayment = async () => {
     if (!stripe || !elements || !user) {
-      alert("Stripe o usuario no disponible");
+      setErrorMessage("Stripe o usuario no disponible");
       return;
     }
 
     setLoading(true);
+    setErrorMessage("");
+    setInfoMessage("");
 
     try {
-      // 1️⃣ Crear PaymentMethod en el cliente
+      // Crear PaymentMethod en el cliente
       const { error: pmError, paymentMethod } =
         await stripe.createPaymentMethod({
           type: "card",
@@ -57,12 +66,12 @@ const PaymentForm = () => {
         });
 
       if (pmError) {
-        alert(`Error al crear el método de pago: ${pmError.message}`);
+        setErrorMessage(`Error al crear el método de pago: ${pmError.message}`);
         setLoading(false);
         return;
       }
 
-      // 2️⃣ Enviar al servidor el paymentMethod.id para crear el PaymentIntent
+      // Enviar al servidor el paymentMethod.id para crear el PaymentIntent
       const response = await api.post("/wallet/put", {
         id_user: user.id_user,
         amount: parseInt(amount),
@@ -70,12 +79,11 @@ const PaymentForm = () => {
       });
 
       const { clientSecret } = response.data;
-
       if (!clientSecret) {
         throw new Error("No se obtuvo el clientSecret");
       }
 
-      // 3️⃣ Confirmar el pago en el cliente
+      // Confirmar el pago en el cliente
       const { error, paymentIntent } = await stripe.confirmCardPayment(
         clientSecret,
         {
@@ -84,17 +92,27 @@ const PaymentForm = () => {
       );
 
       if (error) {
-        console.error("Error al confirmar el pago:", error);
-        alert(`Error al confirmar el pago: ${error.message}`);
+        setErrorMessage(`Error al confirmar el pago: ${error.message}`);
       } else if (paymentIntent?.status === "succeeded") {
         setPaymentId(paymentIntent.id);
-        alert("Recarga exitosa!");
+        setInfoMessage("Recarga exitosa!");
+        setAmount("");
+
+        // Obtener el CardElement y limpiarlo
+        const cardElement = elements.getElement(CardElement);
+        if (cardElement) {
+          cardElement.clear();
+        }
+
+        // Notificar al Dashboard que la operación fue exitosa
+        if (onPaymentSuccess) {
+          onPaymentSuccess();
+        }
       } else {
-        console.warn("El pago no se completó:", paymentIntent);
-        alert("Pago no completado");
+        setErrorMessage("Pago no completado");
       }
     } catch (error) {
-      alert(
+      setErrorMessage(
         `Error en la transacción: ${
           error.response?.data?.error || error.message
         }`
@@ -122,9 +140,16 @@ const PaymentForm = () => {
       >
         {loading ? "Procesando..." : "Recargar"}
       </Button>
-      {paymentId && <CardInfo paymentIntentId={paymentId} />}
+      {paymentId && <p>ID de pago: {paymentId}</p>}
+      {infoMessage && <Message>{infoMessage}</Message>}
+      {errorMessage && <Message error>{errorMessage}</Message>}
     </PaymentContainer>
   );
+};
+
+// Validación de props
+PaymentForm.propTypes = {
+  onPaymentSuccess: PropTypes.func,
 };
 
 export default PaymentForm;

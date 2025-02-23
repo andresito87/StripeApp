@@ -1,4 +1,5 @@
 import axios from "axios";
+import { redirectTo } from "./NavigationService";
 
 const API_URL = "http://127.0.0.1:8000/api";
 
@@ -21,5 +22,17 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Interceptor para capturar respuestas con status 401
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem("token");
+      redirectTo("/login");
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default api;

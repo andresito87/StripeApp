@@ -33,6 +33,7 @@ const Title = styled.h1`
 const Form = styled.form`
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 1.2rem;
 `;
 
