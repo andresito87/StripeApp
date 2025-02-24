@@ -10,10 +10,15 @@ use Stripe\Stripe;
 use Stripe\PaymentIntent;
 use Stripe\Refund;
 
+/**
+ * Controlador del monedero, gestiona todas las operaciones que se pueden realizar con este
+ */
 class WalletController extends Controller
 {
     /**
      * PUT (PUSH): Recargar saldo en el monedero mediante Stripe
+     * @param \Illuminate\Http\Request $request
+     * @return mixed|\Illuminate\Http\JsonResponse
      */
     public function put(Request $request)
     {
@@ -35,7 +40,7 @@ class WalletController extends Controller
                 'payment_method_types' => ['card'] // Asegurar que solo usa tarjetas
             ]);
 
-            // 🔹 Asegurar que el monedero del usuario existe y tiene una descripción
+            // Asegurar que el monedero del usuario existe y tiene una descripción
             $wallet = Wallet::firstOrCreate(
                 ['id_user' => $request->id_user],
                 [
@@ -45,7 +50,7 @@ class WalletController extends Controller
                 ]
             );
 
-            // 🔹 Registrar la transacción en la tabla wallet (PUSH)
+            // Registrar la transacción en la tabla wallet (PUSH)
             $transaction = Wallet::create([
                 'id_user' => $request->id_user,
                 'description' => 'Recarga de saldo',
@@ -82,6 +87,8 @@ class WalletController extends Controller
 
     /**
      * POP (POP): Retirar saldo y hacer un reembolso mediante Stripe
+     * @param \Illuminate\Http\Request $request
+     * @return mixed|\Illuminate\Http\JsonResponse
      */
     public function pop(Request $request)
     {
@@ -94,14 +101,14 @@ class WalletController extends Controller
         Stripe::setApiKey(env('STRIPE_SECRET_KEY'));
 
         try {
-            // 🔹 Buscar el monedero del usuario
+            // Buscar el monedero del usuario
             $wallet = Wallet::where('id_user', $request->id_user)->first();
 
             if (!$wallet || $wallet->amount < $request->amount) {
                 return response()->json(['error' => 'Fondos insuficientes'], 400);
             }
 
-            // 🔹 Obtener la información del PaymentIntent de Stripe
+            // Obtener la información del PaymentIntent de Stripe
             $paymentIntent = PaymentIntent::retrieve($request->payment_intent_id);
             $originalAmount = $paymentIntent->amount / 100; // Convertir de centavos a euros
 
@@ -109,7 +116,7 @@ class WalletController extends Controller
                 return response()->json(['error' => 'El monto del reembolso no puede ser mayor que la transacción original'], 400);
             }
 
-            // 🔹 Verificar si ya se han hecho reembolsos parciales previos
+            // Verificar si ya se han hecho reembolsos parciales previos
             $existingRefunds = Wallet::where('id_transaction', $request->payment_intent_id)
                 ->where('id_wallet_type', 2) // Solo transacciones POP
                 ->sum('amount'); // Total de dinero ya reembolsado
@@ -120,13 +127,13 @@ class WalletController extends Controller
                 return response()->json(['error' => 'El monto total reembolsado supera la transacción original'], 400);
             }
 
-            // 🔹 Procesar reembolso parcial en Stripe
+            // Procesar reembolso parcial en Stripe
             $refund = Refund::create([
                 'payment_intent' => $request->payment_intent_id,
                 'amount' => $request->amount * 100, // Convertir a centavos
             ]);
 
-            // 🔹 Registrar transacción en la tabla wallet (POP)
+            // Registrar transacción en la tabla wallet (POP)
             $transaction = Wallet::create([
                 'id_user' => $request->id_user,
                 'description' => 'Reembolso parcial de saldo',
@@ -135,7 +142,7 @@ class WalletController extends Controller
                 'id_transaction' => $refund->id
             ]);
 
-            // 🔹 Actualizar saldo del monedero
+            // Actualizar saldo del monedero
             $wallet->amount -= $request->amount;
             $wallet->save();
 
@@ -166,6 +173,8 @@ class WalletController extends Controller
 
     /**
      * Obtener el saldo actual del monedero
+     * @param \Illuminate\Http\Request $request
+     * @return mixed|\Illuminate\Http\JsonResponse
      */
     public function getBalance(Request $request)
     {
@@ -182,6 +191,11 @@ class WalletController extends Controller
         ], 200);
     }
 
+    /**
+     * Obtener el listado de transacciones del usuario
+     * @param \Illuminate\Http\Request $request
+     * @return mixed|\Illuminate\Http\JsonResponse
+     */
     public function getTransactions(Request $request)
     {
         $user = $request->user(); // Obtener usuario autenticado

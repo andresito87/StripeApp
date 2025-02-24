@@ -7,6 +7,8 @@ import { Input } from "../components/ui/Input";
 import api from "../services/api";
 import { AuthContext } from "../context/AuthContext";
 
+/*********************  ESTILOS  *********************/
+
 const Container = styled.div`
   display: flex;
   flex-direction: column;
@@ -47,6 +49,8 @@ const Message = styled.p`
   color: ${(props) => (props.error ? "#ef4444" : "#10b981")};
 `;
 
+/*********************  LÓGICA  *********************/
+
 const TwoFactorActivation = () => {
   const [qrImage, setQrImage] = useState(null);
   const [otp, setOtp] = useState("");
@@ -55,7 +59,7 @@ const TwoFactorActivation = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Generar secreto y QR al montar el componente
+  // Generar secreto y QR
   const generateSecret = async () => {
     try {
       const response = await api.post("/2fa/generate-secret");
@@ -66,12 +70,14 @@ const TwoFactorActivation = () => {
     }
   };
 
+  // Generar secreto y QR al montar el componente
   React.useEffect(() => {
     generateSecret();
   }, []);
 
   const { fetchUser } = useContext(AuthContext);
 
+  // Función encargada de verificar el 2fa y su código secreto asociado en la app
   const handleVerify = async (e) => {
     e.preventDefault();
     setErrorMessage("");
@@ -92,6 +98,7 @@ const TwoFactorActivation = () => {
     }
   };
 
+  // Funcion ejecutada para cancelar el proceso de activación de 2fa
   const handleReturn = () => {
     navigate("/dashboard");
   };
@@ -104,7 +111,7 @@ const TwoFactorActivation = () => {
           <>
             <p>
               Escanea el siguiente código QR con tu aplicación de autenticación
-              (por ejemplo, Google Authenticator):
+              Google Authenticator:
             </p>
             <QRImage src={qrImage} alt="Código QR 2FA" />
           </>

@@ -8,8 +8,7 @@ import PaymentForm from "../components/ui/PaymentForm";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
-
+/*********************  ESTILOS  *********************/
 const DashboardContainer = styled.div`
   display: flex;
   flex-direction: column; /* Forzar columna */
@@ -84,6 +83,10 @@ const RefundButton = styled(Button)`
   }
 `;
 
+/*********************  LÓGICA  *********************/
+// Inicializamos Stripe
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+
 const Dashboard = () => {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -109,6 +112,7 @@ const Dashboard = () => {
     }
   };
 
+  // Permite actualizar el balance y el listado de transacciones cuando de monta el componente
   useEffect(() => {
     fetchBalance();
     fetchTransactions();
@@ -141,6 +145,7 @@ const Dashboard = () => {
     }
   };
 
+  // Refrecar balance y listado de transacciones
   const handlePaymentSuccess = async () => {
     await fetchBalance();
     await fetchTransactions();
@@ -148,7 +153,6 @@ const Dashboard = () => {
 
   // Botón para activar 2FA (si no está habilitado)
   const handleActivateTwoFA = () => {
-    console.log("Activando 2FA");
     navigate("/2fa-activation");
   };
 
@@ -156,7 +160,7 @@ const Dashboard = () => {
     <DashboardContainer>
       {/* Bloque de Saldo y Cerrar Sesión */}
       <Card>
-        <Title>Bienvenido, {user?.name}</Title>
+        <Title>Bienvenid@, {user?.name}</Title>
         <Balance>Saldo actual: €{balance}</Balance>
         <Button onClick={logout} variant="destructive">
           Cerrar Sesión
@@ -184,23 +188,23 @@ const Dashboard = () => {
         <Title>Historial de Transacciones</Title>
         <TransactionList>
           {transactions.length > 0 ? (
-            transactions.map((tx) => (
-              <TransactionItem key={tx.id_wallet}>
+            transactions.map((transaction) => (
+              <TransactionItem key={transaction.id_wallet}>
                 <span>
-                  {tx.description} - €{tx.amount} -{" "}
-                  {new Date(tx.date_create).toLocaleString()}
+                  {transaction.description} - {transaction.amount}€ -{" "}
+                  {new Date(transaction.date_create).toLocaleString()}
                 </span>
-                {tx.id_wallet_type === 2 ? (
+                {transaction.id_wallet_type === 2 ? (
                   <RefundButton disabled>Reembolsado</RefundButton>
                 ) : (
-                  <RefundButton onClick={() => handleRefund(tx)}>
+                  <RefundButton onClick={() => handleRefund(transaction)}>
                     Reembolso
                   </RefundButton>
                 )}
               </TransactionItem>
             ))
           ) : (
-            <p>No hay transacciones aún.</p>
+            <p>No hay transacciones registradas.</p>
           )}
         </TransactionList>
       </TransactionsContainer>

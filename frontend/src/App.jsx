@@ -1,3 +1,4 @@
+// App.jsx
 import React from "react";
 import {
   BrowserRouter as Router,
@@ -5,16 +6,15 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
+import PropTypes from "prop-types";
 import { AuthContext } from "./context/AuthContext";
+import { AuthProvider } from "./context/AuthProvider";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
-
-import PropTypes from "prop-types";
 import Register from "./pages/Register";
-import { AuthProvider } from "./context/AuthProvider";
+import TwoFactorActivation from "./pages/TwoFactorActivation";
 
-import TwoFactorActivation from "../src/pages/TwoFactorActivation";
-
+// Definición del componente PrivateRoute para proteger rutas
 const PrivateRoute = ({ children }) => {
   const { token } = React.useContext(AuthContext);
   return token ? children : <Navigate to="/login" />;
@@ -40,6 +40,7 @@ function App() {
             }
           />
           <Route path="/2fa-activation" element={<TwoFactorActivation />} />
+          {/* Redirecciona cualquier ruta no definida al dashboard */}
           <Route path="*" element={<Navigate to="/dashboard" />} />
         </Routes>
       </Router>

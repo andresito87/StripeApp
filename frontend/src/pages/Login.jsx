@@ -6,6 +6,8 @@ import styled from "styled-components";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 
+/*********************  ESTILOS  *********************/
+
 const LoginContainer = styled.div`
   display: flex;
   align-items: center;
@@ -60,6 +62,8 @@ const SwitchText = styled.p`
   }
 `;
 
+/*********************  LÓGICA  *********************/
+
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -91,7 +95,7 @@ const Login = () => {
     }
   };
 
-  // Función para cancelar el flujo de 2FA y reiniciar el login
+  // Función para cancelar el flujo de 2FA y reiniciar el login cuando el usuario vuelve al inicio
   const handleCancel = () => {
     cancelTwoFactor();
     setOtp("");
@@ -101,6 +105,8 @@ const Login = () => {
     <LoginContainer>
       <LoginBox>
         <Title>Iniciar sesión</Title>
+
+        {/* Si no se requiere autenticación 2fa, se muestra el formulario normal */}
         {!isTwoFactorRequired ? (
           <Form onSubmit={handleLoginSubmit}>
             <Input
@@ -121,7 +127,9 @@ const Login = () => {
             {error && <ErrorMessage>{error}</ErrorMessage>}
           </Form>
         ) : (
+          // Si se requiere 2FA, se muestra el formulario para la verificación del OTP
           <Form onSubmit={handleOtpSubmit}>
+            <p>Introduce el código de Google Authenticator</p>
             <Input
               type="text"
               placeholder="Código OTP"
@@ -133,6 +141,8 @@ const Login = () => {
             {error && <ErrorMessage>{error}</ErrorMessage>}
           </Form>
         )}
+
+        {/* Muestra un enlace para registrarse o se ofrece cancelar y volver al inicio de sesión. */}
         {!isTwoFactorRequired ? (
           <SwitchText>
             ¿No tienes cuenta? <Link to="/register">Regístrate</Link>

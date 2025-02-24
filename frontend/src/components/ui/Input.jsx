@@ -1,7 +1,8 @@
 import styled from "styled-components";
 import PropTypes from "prop-types";
 
-// Define el estilo base para el input
+/*********************  ESTILOS  *********************/
+
 const StyledInput = styled.input`
   width: 80%;
   max-width: 100%;
@@ -25,6 +26,8 @@ const StyledInput = styled.input`
   }
 `;
 
+/*********************  LÓGICA  *********************/
+
 export const Input = ({
   type = "text",
   placeholder,
@@ -43,6 +46,7 @@ export const Input = ({
   );
 };
 
+// Validación de props, tipos de datos
 Input.propTypes = {
   type: PropTypes.string,
   placeholder: PropTypes.string,

@@ -9,6 +9,7 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem("token") || "");
   const [twoFAToken, setTwoFAToken] = useState(null);
 
+  // Función para realizar el deslogueo
   const logout = useCallback(() => {
     setUser(null);
     setToken("");
@@ -16,6 +17,7 @@ export const AuthProvider = ({ children }) => {
     setTwoFAToken(null);
   }, []);
 
+  // Función para obtener el usuario actualmente logueado
   const fetchUser = useCallback(async () => {
     try {
       const response = await api.get("/user");
@@ -32,6 +34,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, [token, fetchUser]);
 
+  // Función que permite la autenticación del usuario
   const login = async (email, password) => {
     try {
       const response = await api.post("/login", { email, password });
@@ -50,6 +53,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Función que permite la autenticación con 2fa
   const verifyTwoFactor = async (otp) => {
     try {
       const response = await api.post(
@@ -57,7 +61,7 @@ export const AuthProvider = ({ children }) => {
         { otp },
         {
           headers: {
-            Authorization: `Bearer ${twoFAToken}`,
+            Authorization: `Bearer ${twoFAToken}`, //recibe un token provisional
           },
         }
       );
@@ -77,6 +81,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Función que permite el registro de nuevos usuarios
   const register = async ({ name, email, password }) => {
     try {
       const response = await api.post("/register", { name, email, password });
@@ -115,6 +120,7 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
+// Validación de props, tipos de datos
 AuthProvider.propTypes = {
   children: PropTypes.node.isRequired,
 };

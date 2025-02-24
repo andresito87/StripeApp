@@ -11,9 +11,9 @@ Route::post('/register', [AuthController::class, 'register'])->name('register');
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('jwt');
 
 // Rutas públicas para 2FA en el login
-// Estas endpoints no requieren del middleware 'jwt' final, ya que usan tokens temporales para 2FA
+// Usan tokens temporales para 2FA
 Route::post('/2fa/verify-login', [TwoFactorController::class, 'verifyLogin']);
-Route::get('/2fa/qr-image', [TwoFactorController::class, 'getQRCode']);
+Route::get('/2fa/qr-image', [TwoFactorController::class, 'getQRCode']); // no usado por ahora
 
 // Rutas protegidas (requieren token final) para gestionar la activación de 2FA en la cuenta
 Route::middleware(['jwt'])->group(function () {

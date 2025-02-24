@@ -2,7 +2,8 @@ import styled from "styled-components";
 import { CardElement } from "@stripe/react-stripe-js";
 import { useState } from "react";
 
-// Estilos personalizados para el contenedor de CardElement
+/*********************  ESTILOS  *********************/
+
 const StyledCardElementWrapper = styled.div`
   width: 100%;
   padding: 12px;
@@ -16,11 +17,14 @@ const StyledCardElementWrapper = styled.div`
   transition: border-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
 `;
 
+/*********************  LÓGICA  *********************/
+
 const StyledCardElement = () => {
   const [isFocused, setIsFocused] = useState(false);
 
   return (
     <StyledCardElementWrapper $isFocused={isFocused}>
+      {/* Elemento Card de la librería de Stripe JS */}
       <CardElement
         options={{
           style: {

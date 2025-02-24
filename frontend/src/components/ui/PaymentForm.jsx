@@ -2,11 +2,13 @@ import { useState, useContext } from "react";
 import PropTypes from "prop-types";
 import { useStripe, useElements, CardElement } from "@stripe/react-stripe-js";
 import styled from "styled-components";
-import { AuthContext } from "../../context/AuthContext"; // Para obtener el usuario autenticado
-import api from "../../services/api"; // Axios configurado
+import { AuthContext } from "../../context/AuthContext";
+import api from "../../services/api";
 import { Button } from "./Button";
 import { Input } from "./Input";
 import StyledCardElement from "./StyledCardElement";
+
+/*********************  ESTILOS  *********************/
 
 const PaymentContainer = styled.div`
   display: flex;
@@ -33,6 +35,8 @@ const Message = styled.p`
   color: ${(props) => (props.error ? "#ef4444" : "#10b981")};
 `;
 
+/*********************  LÓGICA  *********************/
+
 const PaymentForm = ({ onPaymentSuccess }) => {
   const [amount, setAmount] = useState("");
   const [paymentId, setPaymentId] = useState("");
@@ -43,9 +47,10 @@ const PaymentForm = ({ onPaymentSuccess }) => {
   const stripe = useStripe();
   const elements = useElements();
 
+  // Función para realizar una recarga
   const handleMicropayment = async () => {
     if (!stripe || !elements || !user) {
-      setErrorMessage("Stripe o usuario no disponible");
+      setErrorMessage("API de Stripe o Datos de usuario no disponibles");
       return;
     }
 
@@ -54,7 +59,7 @@ const PaymentForm = ({ onPaymentSuccess }) => {
     setInfoMessage("");
 
     try {
-      // Crear PaymentMethod en el cliente
+      // Crear Método de pago en el cliente
       const { error: pmError, paymentMethod } =
         await stripe.createPaymentMethod({
           type: "card",
@@ -95,7 +100,7 @@ const PaymentForm = ({ onPaymentSuccess }) => {
         setErrorMessage(`Error al confirmar el pago: ${error.message}`);
       } else if (paymentIntent?.status === "succeeded") {
         setPaymentId(paymentIntent.id);
-        setInfoMessage("Recarga exitosa!");
+        setInfoMessage("¡Recarga exitosa!");
         setAmount("");
 
         // Obtener el CardElement y limpiarlo
@@ -125,14 +130,17 @@ const PaymentForm = ({ onPaymentSuccess }) => {
 
   return (
     <PaymentContainer>
+      {/* Título de la sección para recargar el saldo */}
       <Title>Recargar Saldo</Title>
-      <p>Usuario: {user?.name}</p>
+
       <Input
         type="number"
         placeholder="Ingrese el monto (€)"
         value={amount}
         onChange={(e) => setAmount(e.target.value)}
       />
+
+      {/* Elemento de la tarjeta de Stripe estilizado para capturar los datos de pago */}
       <StyledCardElement />
       <Button
         onClick={handleMicropayment}
@@ -140,14 +148,20 @@ const PaymentForm = ({ onPaymentSuccess }) => {
       >
         {loading ? "Procesando..." : "Recargar"}
       </Button>
+
+      {/* Si existe un paymentId, se muestra en pantalla */}
       {paymentId && <p>ID de pago: {paymentId}</p>}
+
+      {/* Muestra un mensaje informativo si hay uno */}
       {infoMessage && <Message>{infoMessage}</Message>}
+
+      {/* Muestra un mensaje de error si hay uno */}
       {errorMessage && <Message error>{errorMessage}</Message>}
     </PaymentContainer>
   );
 };
 
-// Validación de props
+// Validación de props, tipos de datos
 PaymentForm.propTypes = {
   onPaymentSuccess: PropTypes.func,
 };

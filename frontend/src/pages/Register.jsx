@@ -5,6 +5,8 @@ import styled from "styled-components";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 
+/*********************  ESTILOS  *********************/
+
 const RegisterContainer = styled.div`
   display: flex;
   align-items: center;
@@ -53,6 +55,8 @@ const SwitchText = styled.p`
   }
 `;
 
+/*********************  LÓGICA  *********************/
+
 const Register = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -60,6 +64,7 @@ const Register = () => {
   const { register } = useContext(AuthContext);
   const navigate = useNavigate();
 
+  // Función ejecutada al enviar el formulario
   const handleSubmit = async (e) => {
     e.preventDefault();
     await register({ name, email, password });
@@ -70,6 +75,7 @@ const Register = () => {
     <RegisterContainer>
       <RegisterBox>
         <Title>Crear Cuenta</Title>
+        {/* Formulario que se encarga de capturar y enviar los datos de registro */}
         <Form onSubmit={handleSubmit}>
           <Input
             type="text"
@@ -91,6 +97,7 @@ const Register = () => {
           />
           <Button type="submit">Registrar</Button>
         </Form>
+        {/* Redirigir al usuario a la página de inicio de sesión si ya tiene una cuenta */}
         <SwitchText>
           ¿Ya tienes cuenta? <Link to="/login">Inicia sesión</Link>
         </SwitchText>

@@ -8,8 +8,10 @@ use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use PragmaRX\Google2FA\Google2FA;
 
+/**
+ * Controlador para gestionar la autenticacion de la api
+ */
 class AuthController extends Controller
 {
     private $jwt_secret;
@@ -64,7 +66,7 @@ class AuthController extends Controller
         }
 
         if ($user->google2fa_enabled) {
-            // Generar un token temporal para 2FA (válido, por ejemplo, 5 minutos)
+            // Generar un token temporal para 2FA (válido 5 minutos)
             $payload = [
                 'iss' => "miapilaravel",
                 'sub' => $user->id_user,

@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Firebase\JWT\Key;
 use Illuminate\Http\Request;
-use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use PragmaRX\Google2FA\Google2FA;
 use Illuminate\Support\Facades\Validator;
@@ -38,7 +38,12 @@ class TwoFactorController extends Controller
 
         // Guarda el secreto en el usuario (sin habilitar 2FA todavía)
         $user->google2fa_secret = $secret;
-        $user->save();
+        if ($user instanceof User) {
+            $user->save();
+        } else {
+            // no hay un usuario logueado
+            return response()->json(['message' => 'El usuario logueado no es válido'], 500);
+        }
 
         // Genera el URI otpauth
         $otpauthUrl = $this->google2fa->getQRCodeUrl(
@@ -84,7 +89,12 @@ class TwoFactorController extends Controller
 
         // Marca 2FA como habilitado
         $user->google2fa_enabled = true;
-        $user->save();
+        if ($user instanceof User) {
+            $user->save();
+        } else {
+            // no hay un usuario logueado
+            return response()->json(['message' => 'El usuario logueado no es válido'], 500);
+        }
 
         return response()->json(['message' => '2FA habilitado correctamente'], 200);
     }
@@ -103,7 +113,7 @@ class TwoFactorController extends Controller
             return response()->json($validator->errors(), 400);
         }
 
-        // Se espera que el token temporal se envíe en la cabecera Authorization
+        // Se espera que se envie el token temporal
         $tempToken = $request->bearerToken();
         if (!$tempToken) {
             return response()->json(['message' => 'Token no proporcionado'], 401);

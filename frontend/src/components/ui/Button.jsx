@@ -1,6 +1,8 @@
 import PropTypes from "prop-types";
 import styled, { css } from "styled-components";
 
+/*********************  ESTILOS  *********************/
+
 const StyledButton = styled.button`
   padding: 0.5rem 1rem;
   border-radius: 0.5rem;
@@ -8,6 +10,9 @@ const StyledButton = styled.button`
   outline: none;
   cursor: pointer;
   transition: background-color 0.2s ease;
+
+  /* $variant es una prop "transient" que usamos para definir estilos dinámicos
+     según el tipo de botón (primary, outline, destructive) */
 
   ${({ $variant }) =>
     $variant === "primary" &&
@@ -51,9 +56,11 @@ const StyledButton = styled.button`
     `}
 `;
 
+/*********************  LÓGICA  *********************/
+
 export const Button = ({
   children,
-  onClick = () => {}, // 🔹 Si no se pasa `onClick`, no da error
+  onClick = () => {},
   variant = "primary",
   disabled = false,
 }) => {
@@ -64,9 +71,10 @@ export const Button = ({
   );
 };
 
+// Validación de props, tipos de datos
 Button.propTypes = {
   children: PropTypes.node.isRequired,
-  onClick: PropTypes.func, // 🔹 Ya no es requerido, porque tiene un valor por defecto
+  onClick: PropTypes.func,
   variant: PropTypes.oneOf(["primary", "outline", "destructive"]),
   disabled: PropTypes.bool,
 };
