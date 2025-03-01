@@ -103,9 +103,10 @@ class TwoFactorController extends Controller
      * Verifica el OTP durante el login utilizando un token temporal.
      * Si es correcto, emite el token final de autenticación.
      */
-    public function verifyLogin(Request $request)
+    public function verifyOtp(Request $request)
     {
         $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
             'otp' => 'required|digits:6'
         ]);
 
@@ -113,47 +114,37 @@ class TwoFactorController extends Controller
             return response()->json($validator->errors(), 400);
         }
 
-        // Se espera que se envie el token temporal
-        $tempToken = $request->bearerToken();
-        if (!$tempToken) {
-            return response()->json(['message' => 'Token no proporcionado'], 401);
-        }
+        $user = User::where('email', $request->email)->first();
 
-        try {
-            $decoded = JWT::decode($tempToken, new Key($this->jwt_secret, 'HS256'));
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'Token inválido'], 401);
-        }
-
-        // Verifica que el token es para el proceso de 2FA
-        if (empty($decoded->{'2fa'})) {
-            return response()->json(['message' => 'Token no válido para 2FA'], 401);
-        }
-
-        $user = User::find($decoded->sub);
         if (!$user) {
             return response()->json(['message' => 'Usuario no encontrado'], 404);
         }
 
-        $secret = $user->google2fa_secret;
-        if (!$this->google2fa->verifyKey($secret, $request->otp)) {
-            return response()->json(['message' => 'Código OTP inválido'], 400);
+        if (!$user->google2fa_enabled) {
+            return response()->json(['message' => 'Este usuario no tiene 2FA activado'], 400);
         }
 
-        // Genera el token final (por ejemplo, válido 1 hora)
+        // Verificar OTP
+        if (!$this->google2fa->verifyKey($user->google2fa_secret, $request->otp)) {
+            return response()->json(['message' => 'Código OTP inválido'], 401);
+        }
+
+        // Generar token JWT final tras verificar el OTP
         $payload = [
             'iss' => "miapilaravel",
             'sub' => $user->id_user,
             'iat' => time(),
-            'exp' => time() + 3600,
+            'exp' => time() + 3600
         ];
 
-        $finalToken = JWT::encode($payload, $this->jwt_secret, 'HS256');
-        $user->api_token = $finalToken;
+        $token = JWT::encode($payload, $this->jwt_secret, 'HS256');
+
+        $user->api_token = $token;
         $user->save();
 
-        return response()->json(['token' => $finalToken], 200);
+        return response()->json(['token' => $token], 200);
     }
+
 
     /**
      * Retorna el QR code (en formato PNG) a partir del token temporal.

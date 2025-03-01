@@ -40,16 +40,6 @@ class WalletController extends Controller
                 'payment_method_types' => ['card'] // Asegurar que solo usa tarjetas
             ]);
 
-            // Asegurar que el monedero del usuario existe y tiene una descripción
-            $wallet = Wallet::firstOrCreate(
-                ['id_user' => $request->id_user],
-                [
-                    'description' => 'Monedero',
-                    'amount' => 0,
-                    'id_wallet_type' => 1 // 🔹 Agregar valor por defecto (PUT)
-                ]
-            );
-
             // Registrar la transacción en la tabla wallet (PUSH)
             $transaction = Wallet::create([
                 'id_user' => $request->id_user,
@@ -59,17 +49,16 @@ class WalletController extends Controller
                 'id_transaction' => $paymentIntent->id
             ]);
 
-            // Actualizar el saldo del monedero
-            $wallet->amount += $request->amount;
-            $wallet->save();
+            // Obtenemos todo el saldo del usuario
+            $saldoTotal = Wallet::where('id_user', $request->id_user)->sum('amount');
 
             return response()->json([
                 'message' => 'Saldo añadido con éxito',
                 'clientSecret' => $paymentIntent->client_secret,
                 'wallet' => [
-                    'id_wallet' => $wallet->id_wallet,
-                    'id_user' => $wallet->id_user,
-                    'amount' => $wallet->amount
+                    'id_wallet' => $transaction->id_wallet,
+                    'id_user' => $transaction->id_user,
+                    'amount' => $saldoTotal
                 ],
                 'transaction' => [
                     'id_wallet' => $transaction->id_wallet,
@@ -101,10 +90,10 @@ class WalletController extends Controller
         Stripe::setApiKey(env('STRIPE_SECRET_KEY'));
 
         try {
-            // Buscar el monedero del usuario
-            $wallet = Wallet::where('id_user', $request->id_user)->first();
+            // Obtener el saldo actual del usuario sumando todas sus transacciones
+            $saldoDisponible = Wallet::where('id_user', $request->id_user)->sum('amount');
 
-            if (!$wallet || $wallet->amount < $request->amount) {
+            if ($saldoDisponible < $request->amount) {
                 return response()->json(['error' => 'Fondos insuficientes'], 400);
             }
 
@@ -142,21 +131,20 @@ class WalletController extends Controller
                 'id_transaction' => $refund->id
             ]);
 
-            // Actualizar saldo del monedero
-            $wallet->amount -= $request->amount;
-            $wallet->save();
+            // Obtener el saldo actualizado del usuario
+            $saldoTotal = Wallet::where('id_user', $request->id_user)->sum('amount');
 
             return response()->json([
                 'message' => 'Reembolso parcial exitoso',
                 'refund' => [
                     'id' => $refund->id,
-                    'amount' => $refund->amount / 100, // Convertir a euros
+                    'amount' => $refund->amount / 100,
                     'status' => $refund->status
                 ],
                 'wallet' => [
-                    'id_wallet' => $wallet->id_wallet,
-                    'id_user' => $wallet->id_user,
-                    'amount' => $wallet->amount
+                    'id_wallet' => $transaction->id_wallet,
+                    'id_user' => $transaction->id_user,
+                    'amount' => $saldoTotal
                 ],
                 'transaction' => [
                     'id_wallet' => $transaction->id_wallet,
@@ -171,6 +159,7 @@ class WalletController extends Controller
         }
     }
 
+
     /**
      * Obtener el saldo actual del monedero
      * @param \Illuminate\Http\Request $request
@@ -184,12 +173,14 @@ class WalletController extends Controller
             return response()->json(['error' => 'Usuario no autenticado'], 401);
         }
 
-        $wallet = Wallet::where('id_user', $user->id_user)->first();
+        // Obtener el saldo actualizado del usuario
+        $saldoTotal = Wallet::where('id_user', $user->id_user)->sum('amount');
 
         return response()->json([
-            'balance' => $wallet ? $wallet->amount : 0
+            'balance' => $saldoTotal
         ], 200);
     }
+
 
     /**
      * Obtener el listado de transacciones del usuario

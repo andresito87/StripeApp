@@ -135,7 +135,7 @@ const PaymentForm = ({ onPaymentSuccess }) => {
 
       <Input
         type="number"
-        placeholder="Ingrese el monto (€)"
+        placeholder="Ingrese la cantidad (€)"
         value={amount}
         onChange={(e) => setAmount(e.target.value)}
       />

@@ -12,7 +12,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->middleware('jwt');
 
 // Rutas públicas para 2FA en el login
 // Usan tokens temporales para 2FA
-Route::post('/2fa/verify-login', [TwoFactorController::class, 'verifyLogin']);
+Route::post('/2fa/verifyOtp', [TwoFactorController::class, 'verifyOtp']);
 Route::get('/2fa/qr-image', [TwoFactorController::class, 'getQRCode']); // no usado por ahora
 
 // Rutas protegidas (requieren token final) para gestionar la activación de 2FA en la cuenta

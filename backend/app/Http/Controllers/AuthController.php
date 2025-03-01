@@ -8,17 +8,20 @@ use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use PragmaRX\Google2FA\Google2FA;
 
 /**
  * Controlador para gestionar la autenticacion de la api
  */
 class AuthController extends Controller
 {
+    private $google2fa;
     private $jwt_secret;
 
     public function __construct()
     {
-        $this->jwt_secret = env('JWT_SECRET', 'tu_clave_secreta'); // Define la clave secreta
+        $this->google2fa = new Google2FA();
+        $this->jwt_secret = env('JWT_SECRET', 'tu_clave_secreta');
     }
 
     /**
@@ -52,7 +55,8 @@ class AuthController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
-            'password' => 'required|string'
+            'password' => 'required|string',
+            'otp' => 'nullable|digits:6' // Se envía solo si 2FA está activado
         ]);
 
         if ($validator->fails()) {
@@ -65,31 +69,27 @@ class AuthController extends Controller
             return response()->json(['message' => 'Credenciales incorrectas'], 401);
         }
 
+        // Si el usuario tiene 2FA activado, verifica el OTP
         if ($user->google2fa_enabled) {
-            // Generar un token temporal para 2FA (válido 5 minutos)
-            $payload = [
-                'iss' => "miapilaravel",
-                'sub' => $user->id_user,
-                'iat' => time(),
-                'exp' => time() + (5 * 60),
-                '2fa' => true
-            ];
+            if (!$request->has('otp') || empty($request->otp)) {
+                return response()->json([
+                    '2fa_required' => true,
+                    'message' => 'Se requiere autenticación de dos factores'
+                ], 200);
+            }
 
-            $tempToken = JWT::encode($payload, $this->jwt_secret, 'HS256');
-
-            return response()->json([
-                '2fa_required' => true,
-                '2fa_token' => $tempToken,
-                'message' => 'Se requiere autenticación de dos factores'
-            ], 200);
+            // Verificar OTP
+            if (!$this->google2fa->verifyKey($user->google2fa_secret, $request->otp)) {
+                return response()->json(['message' => 'Código OTP inválido'], 401);
+            }
         }
 
-        // Si 2FA no está habilitado, genera el token JWT final
+        // Generar token JWT final (válido 1 hora)
         $payload = [
             'iss' => "miapilaravel",
             'sub' => $user->id_user,
             'iat' => time(),
-            'exp' => time() + (60 * 60)
+            'exp' => time() + 3600
         ];
 
         $token = JWT::encode($payload, $this->jwt_secret, 'HS256');
@@ -99,8 +99,6 @@ class AuthController extends Controller
 
         return response()->json(['token' => $token], 200);
     }
-
-
 
     /**
      * Cerrar sesión eliminando el token del usuario

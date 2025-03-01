@@ -7,14 +7,16 @@ import { AuthContext } from "./AuthContext";
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem("token") || "");
-  const [twoFAToken, setTwoFAToken] = useState(null);
+  const [isTwoFA, setIsTwoFA] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState(null); // permite almacenar temporalmente el email del usuario cuando en un 2fa login
 
   // Función para realizar el deslogueo
   const logout = useCallback(() => {
     setUser(null);
     setToken("");
     localStorage.removeItem("token");
-    setTwoFAToken(null);
+    setIsTwoFA(false);
+    setPendingEmail(null);
   }, []);
 
   // Función para obtener el usuario actualmente logueado
@@ -38,12 +40,13 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await api.post("/login", { email, password });
-      if (response.data.two_fa_required || response.data["2fa_required"]) {
-        setTwoFAToken(response.data.two_fa_token || response.data["2fa_token"]);
-      } else if (response.data.token) {
+      if (response.data.token) {
         setToken(response.data.token);
         localStorage.setItem("token", response.data.token);
         fetchUser();
+      } else {
+        setIsTwoFA(true);
+        setPendingEmail(email);
       }
     } catch (error) {
       console.error(
@@ -55,21 +58,24 @@ export const AuthProvider = ({ children }) => {
 
   // Función que permite la autenticación con 2fa
   const verifyTwoFactor = async (otp) => {
-    try {
-      const response = await api.post(
-        "/2fa/verify-login",
-        { otp },
-        {
-          headers: {
-            Authorization: `Bearer ${twoFAToken}`, //recibe un token provisional
-          },
-        }
+    if (!pendingEmail) {
+      console.error(
+        "Error: No hay email registrado para la verificación de 2FA"
       );
+      return;
+    }
+
+    try {
+      const response = await api.post("/2fa/verifyOtp", {
+        email: pendingEmail,
+        otp,
+      });
+
       if (response.data.token) {
         setToken(response.data.token);
         localStorage.setItem("token", response.data.token);
         await fetchUser();
-        setTwoFAToken(null);
+        setPendingEmail(null);
         return response.data.token;
       }
     } catch (error) {
@@ -98,7 +104,8 @@ export const AuthProvider = ({ children }) => {
 
   // Función para cancelar el flujo de 2FA y reiniciar el proceso de login
   const cancelTwoFactor = useCallback(() => {
-    setTwoFAToken(null);
+    setIsTwoFA(false);
+    setPendingEmail(null);
   }, []);
 
   return (
@@ -111,7 +118,7 @@ export const AuthProvider = ({ children }) => {
         logout,
         verifyTwoFactor,
         fetchUser,
-        isTwoFactorRequired: !!twoFAToken,
+        isTwoFactorRequired: !!isTwoFA,
         cancelTwoFactor,
       }}
     >

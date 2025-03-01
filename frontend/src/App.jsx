@@ -1,4 +1,3 @@
-// App.jsx
 import React from "react";
 import {
   BrowserRouter as Router,
@@ -14,13 +13,23 @@ import Dashboard from "./pages/Dashboard";
 import Register from "./pages/Register";
 import TwoFactorActivation from "./pages/TwoFactorActivation";
 
-// Definición del componente PrivateRoute para proteger rutas
+// Definición del componente PrivateRoute para proteger rutas autenticadas
 const PrivateRoute = ({ children }) => {
   const { token } = React.useContext(AuthContext);
   return token ? children : <Navigate to="/login" />;
 };
 
+// Definición del componente PublicRoute para evitar que usuarios autenticados accedan a login o registro
+const PublicRoute = ({ children }) => {
+  const { token } = React.useContext(AuthContext);
+  return token ? <Navigate to="/dashboard" /> : children;
+};
+
 PrivateRoute.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+PublicRoute.propTypes = {
   children: PropTypes.node.isRequired,
 };
 
@@ -29,8 +38,25 @@ function App() {
     <AuthProvider>
       <Router>
         <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          {/* Rutas públicas, si el usuario está autenticado redirige al dashboard */}
+          <Route
+            path="/login"
+            element={
+              <PublicRoute>
+                <Login />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <PublicRoute>
+                <Register />
+              </PublicRoute>
+            }
+          />
+
+          {/* Rutas privadas, accesibles solo si el usuario está autenticado */}
           <Route
             path="/dashboard"
             element={
@@ -39,8 +65,10 @@ function App() {
               </PrivateRoute>
             }
           />
+
           <Route path="/2fa-activation" element={<TwoFactorActivation />} />
-          {/* Redirecciona cualquier ruta no definida al dashboard */}
+
+          {/* Redirigir cualquier ruta desconocida al dashboard si está autenticado, o al login si no */}
           <Route path="*" element={<Navigate to="/dashboard" />} />
         </Routes>
       </Router>
