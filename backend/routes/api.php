@@ -5,6 +5,7 @@ use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\WalletController;
 use Illuminate\Support\Facades\Route;
 
+
 // Rutas de autenticación
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::post('/register', [AuthController::class, 'register'])->name('register');
@@ -22,7 +23,8 @@ Route::middleware(['jwt'])->group(function () {
     // Rutas para el Wallet
     Route::get('/wallet/balance', [WalletController::class, 'getBalance']);
     Route::post('/wallet/put', [WalletController::class, 'put']);
-    Route::post('/wallet/pop', [WalletController::class, 'pop']);
+    Route::post('/wallet/popFromRecharge', [WalletController::class, 'popFromRecharge']);
+    Route::post('/wallet/popFromBalance', [WalletController::class, 'popFromBalance']);
     Route::get('/wallet/transactions', [WalletController::class, 'getTransactions']);
 
     // Rutas para habilitar 2FA en la cuenta

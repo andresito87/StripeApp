@@ -16,6 +16,7 @@ use Illuminate\Notifications\Notifiable;
  * @property string $api_token
  * @property string|null $google2fa_secret
  * @property bool $google2fa_enabled
+ * @property int $stripe_customer_id
  */
 class User extends Authenticatable
 {
@@ -30,7 +31,8 @@ class User extends Authenticatable
         'password',
         'api_token',
         'google2fa_secret',
-        'google2fa_enabled'
+        'google2fa_enabled',
+        'stripe_customer_id'
     ];
 
     protected $hidden = [

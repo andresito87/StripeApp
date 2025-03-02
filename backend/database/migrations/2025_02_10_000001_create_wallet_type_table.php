@@ -13,13 +13,14 @@ return new class extends Migration {
     {
         Schema::create('wallet_type', function (Blueprint $table) {
             $table->id('id_wallet_type'); // Clave primaria
-            $table->string('type_name', 10)->unique(); // PUSH o POP
+            $table->string('type_name', 20)->unique(); // PUSH o POP
         });
 
         // Insertar los valores PUSH y POP por defecto
         DB::table('wallet_type')->insert([
             ['id_wallet_type' => 1, 'type_name' => 'PUT'],
-            ['id_wallet_type' => 2, 'type_name' => 'POP']
+            ['id_wallet_type' => 2, 'type_name' => 'POP_RECHARGUE'],
+            ['id_wallet_type' => 3, 'type_name' => 'POP_BALANCE']
         ]);
     }
 

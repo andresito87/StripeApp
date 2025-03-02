@@ -7,6 +7,7 @@ import { Button } from "../components/ui/Button";
 import PaymentForm from "../components/ui/PaymentForm";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
+import RefundForm from "../components/ui/RefundForm";
 
 /*********************  ESTILOS  *********************/
 const DashboardContainer = styled.div`
@@ -125,7 +126,7 @@ const Dashboard = () => {
     if (!confirmRefund) return;
 
     try {
-      const response = await api.post(`/wallet/pop`, {
+      const response = await api.post(`/wallet/popFromRecharge`, {
         id_user: user.id_user,
         amount: transaction.amount,
         payment_intent_id: transaction.id_transaction,
@@ -145,7 +146,7 @@ const Dashboard = () => {
     }
   };
 
-  // Refrecar balance y listado de transacciones
+  // Refrescar balance y listado de transacciones
   const handlePaymentSuccess = async () => {
     await fetchBalance();
     await fetchTransactions();
@@ -154,6 +155,12 @@ const Dashboard = () => {
   // Botón para activar 2FA (si no está habilitado)
   const handleActivateTwoFA = () => {
     navigate("/2fa-activation");
+  };
+
+  // Refrescar balance y listado de transacciones
+  const handleRefundSuccess = async () => {
+    await fetchBalance();
+    await fetchTransactions();
   };
 
   return (
@@ -181,6 +188,11 @@ const Dashboard = () => {
         <Elements stripe={stripePromise}>
           <PaymentForm onPaymentSuccess={handlePaymentSuccess} />
         </Elements>
+      </Card>
+
+      {/* 🔹 Nuevo Bloque de Reembolso desde Saldo */}
+      <Card>
+        <RefundForm onRefundSuccess={handleRefundSuccess} />
       </Card>
 
       {/* Bloque de Historial de Transacciones */}

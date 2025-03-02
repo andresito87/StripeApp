@@ -32,14 +32,13 @@ const Title = styled.h2`
 const Message = styled.p`
   font-size: 1rem;
   margin-top: 1rem;
-  color: ${(props) => (props.error ? "#ef4444" : "#10b981")};
+  color: ${({ error }) => (error ? "#ef4444" : "#10b981")};
 `;
 
 /*********************  LÓGICA  *********************/
 
 const PaymentForm = ({ onPaymentSuccess }) => {
   const [amount, setAmount] = useState("");
-  const [paymentId, setPaymentId] = useState("");
   const [loading, setLoading] = useState(false);
   const [infoMessage, setInfoMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -59,7 +58,7 @@ const PaymentForm = ({ onPaymentSuccess }) => {
     setInfoMessage("");
 
     try {
-      // Crear Método de pago en el cliente
+      // Crear el método de pago en Stripe
       const { error: pmError, paymentMethod } =
         await stripe.createPaymentMethod({
           type: "card",
@@ -76,34 +75,18 @@ const PaymentForm = ({ onPaymentSuccess }) => {
         return;
       }
 
-      // Enviar al servidor el paymentMethod.id para crear el PaymentIntent
+      // Enviar al backend el paymentMethod.id para que el servidor gestione la transacción
       const response = await api.post("/wallet/put", {
         id_user: user.id_user,
         amount: parseInt(amount),
         payment_method_id: paymentMethod.id,
       });
 
-      const { clientSecret } = response.data;
-      if (!clientSecret) {
-        throw new Error("No se obtuvo el clientSecret");
-      }
-
-      // Confirmar el pago en el cliente
-      const { error, paymentIntent } = await stripe.confirmCardPayment(
-        clientSecret,
-        {
-          payment_method: paymentMethod.id,
-        }
-      );
-
-      if (error) {
-        setErrorMessage(`Error al confirmar el pago: ${error.message}`);
-      } else if (paymentIntent?.status === "succeeded") {
-        setPaymentId(paymentIntent.id);
-        setInfoMessage("¡Recarga exitosa!");
+      if (response.status === 200) {
+        setInfoMessage(response.data.message);
         setAmount("");
 
-        // Obtener el CardElement y limpiarlo
+        // Limpiar el CardElement
         const cardElement = elements.getElement(CardElement);
         if (cardElement) {
           cardElement.clear();
@@ -114,14 +97,10 @@ const PaymentForm = ({ onPaymentSuccess }) => {
           onPaymentSuccess();
         }
       } else {
-        setErrorMessage("Pago no completado");
+        throw new Error(response.data.error || "Error en la transacción");
       }
     } catch (error) {
-      setErrorMessage(
-        `Error en la transacción: ${
-          error.response?.data?.error || error.message
-        }`
-      );
+      setErrorMessage(`${error.response?.data?.error || error.message}`);
       console.error("Error en la transacción:", error);
     } finally {
       setLoading(false);
@@ -148,9 +127,6 @@ const PaymentForm = ({ onPaymentSuccess }) => {
       >
         {loading ? "Procesando..." : "Recargar"}
       </Button>
-
-      {/* Si existe un paymentId, se muestra en pantalla */}
-      {paymentId && <p>ID de pago: {paymentId}</p>}
 
       {/* Muestra un mensaje informativo si hay uno */}
       {infoMessage && <Message>{infoMessage}</Message>}

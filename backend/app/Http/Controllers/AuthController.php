@@ -9,6 +9,8 @@ use Firebase\JWT\Key;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use PragmaRX\Google2FA\Google2FA;
+use Stripe\Stripe;
+use Stripe\Customer;
 
 /**
  * Controlador para gestionar la autenticacion de la api
@@ -39,14 +41,35 @@ class AuthController extends Controller
             return response()->json($validator->errors(), 400);
         }
 
+        // Crear el usuario en la base de datos
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
 
-        return response()->json(['message' => 'Usuario registrado con éxito'], 201);
+        // Registrar el usuario en Stripe
+        try {
+            Stripe::setApiKey(env('STRIPE_SECRET_KEY'));
+
+            $customer = Customer::create([
+                'name' => $user->name,
+                'email' => $user->email,
+            ]);
+
+            // Guardar el ID del cliente de Stripe en la base de datos
+            $user->stripe_customer_id = $customer->id;
+            $user->save();
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Error al crear el cliente en Stripe: ' . $e->getMessage()], 500);
+        }
+
+        return response()->json([
+            'message' => 'Usuario registrado con éxito y vinculado a Stripe',
+            'stripe_customer_id' => $user->stripe_customer_id
+        ], 201);
     }
+
 
     /**
      * Acceso mediante jwt Token
