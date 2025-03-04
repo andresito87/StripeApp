@@ -1,4 +1,3 @@
-// src/pages/TwoFactorActivation.jsx
 import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
@@ -6,6 +5,7 @@ import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import api from "../services/api";
 import { AuthContext } from "../context/AuthContext";
+import { toast } from "react-toastify";
 
 /*********************  ESTILOS  *********************/
 
@@ -43,19 +43,11 @@ const QRImage = styled.img`
   margin: 1rem 0;
 `;
 
-const Message = styled.p`
-  font-size: 1rem;
-  margin-top: 1rem;
-  color: ${(props) => (props.error ? "#ef4444" : "#10b981")};
-`;
-
 /*********************  LÓGICA  *********************/
 
 const TwoFactorActivation = () => {
   const [qrImage, setQrImage] = useState(null);
   const [otp, setOtp] = useState("");
-  const [infoMessage, setInfoMessage] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -66,7 +58,7 @@ const TwoFactorActivation = () => {
       setQrImage(`data:image/png;base64,${response.data.qr_image}`);
     } catch (error) {
       console.error("Error al generar el secreto:", error);
-      setErrorMessage("Error al generar el código QR para 2FA.");
+      toast.error("Error al generar el código QR para 2FA.");
     }
   };
 
@@ -80,17 +72,15 @@ const TwoFactorActivation = () => {
   // Función encargada de verificar el 2fa y su código secreto asociado en la app
   const handleVerify = async (e) => {
     e.preventDefault();
-    setErrorMessage("");
-    setInfoMessage("");
     setLoading(true);
     try {
       // Envía el OTP al endpoint para activar el 2FA
       await api.post("/2fa/verify-enablement", { otp });
       await fetchUser(); // Actualiza el objeto user en el contexto
-      setInfoMessage("2FA habilitado correctamente.");
+      toast.success("2FA habilitado correctamente.");
     } catch (error) {
       console.error("Error al verificar OTP:", error);
-      setErrorMessage(
+      toast.error(
         error.response?.data?.message || "Código OTP inválido o expirado."
       );
     } finally {
@@ -130,8 +120,6 @@ const TwoFactorActivation = () => {
             {loading ? "Verificando..." : "Activar 2FA"}
           </Button>
         </form>
-        {infoMessage && <Message>{infoMessage}</Message>}
-        {errorMessage && <Message error>{errorMessage}</Message>}
         {/* Botón para volver al Dashboard */}
         <Button onClick={handleReturn} style={{ marginTop: "1rem" }}>
           Volver al Dashboard

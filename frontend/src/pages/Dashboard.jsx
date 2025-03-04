@@ -8,6 +8,7 @@ import PaymentForm from "../components/ui/PaymentForm";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import RefundForm from "../components/ui/RefundForm";
+import { toast } from "react-toastify";
 
 /*********************  ESTILOS  *********************/
 const DashboardContainer = styled.div`
@@ -120,11 +121,6 @@ const Dashboard = () => {
   }, []);
 
   const handleRefund = async (transaction) => {
-    const confirmRefund = window.confirm(
-      "¿Estás seguro de que deseas solicitar un reembolso?"
-    );
-    if (!confirmRefund) return;
-
     try {
       const response = await api.post(`/wallet/popFromRecharge`, {
         id_user: user.id_user,
@@ -132,14 +128,14 @@ const Dashboard = () => {
         payment_intent_id: transaction.id_transaction,
       });
 
-      alert(response.data.message || "Reembolso solicitado con éxito");
+      toast.success(response.data.message || "Reembolso solicitado con éxito");
 
       // Actualizamos balance y transacciones
       await fetchBalance();
       await fetchTransactions();
     } catch (error) {
       console.error("Error al solicitar reembolso:", error);
-      alert(
+      toast.error(
         error.response?.data?.error ||
           "Hubo un error al solicitar el reembolso."
       );
@@ -190,7 +186,7 @@ const Dashboard = () => {
         </Elements>
       </Card>
 
-      {/* 🔹 Nuevo Bloque de Reembolso desde Saldo */}
+      {/* Nuevo Bloque de Reembolso desde Saldo */}
       <Card>
         <RefundForm onRefundSuccess={handleRefundSuccess} />
       </Card>
@@ -206,7 +202,7 @@ const Dashboard = () => {
                   {transaction.description} - {transaction.amount}€ -{" "}
                   {new Date(transaction.date_create).toLocaleString()}
                 </span>
-                {transaction.id_wallet_type === 2 ? (
+                {!(transaction.id_wallet_type === 1) ? (
                   <RefundButton disabled>Reembolsado</RefundButton>
                 ) : (
                   <RefundButton onClick={() => handleRefund(transaction)}>

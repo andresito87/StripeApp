@@ -4,6 +4,7 @@ import { AuthContext } from "../context/AuthContext";
 import styled from "styled-components";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
+import { toast } from "react-toastify";
 
 /*********************  ESTILOS  *********************/
 
@@ -67,8 +68,25 @@ const Register = () => {
   // Función ejecutada al enviar el formulario
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await register({ name, email, password });
-    navigate("/dashboard");
+
+    // Validaciones básicas
+    if (!name || !email || !password) {
+      toast.error("Todos los campos son obligatorios.");
+      return;
+    }
+
+    try {
+      await register({ name, email, password });
+      toast.success("Usuario registrado correctamente");
+      navigate("/login");
+    } catch (err) {
+      toast.error(
+        "Error: " +
+          (err.response?.data?.email[0]
+            ? "El email ya esta en uso"
+            : "Ocurrió un error al registrar.")
+      );
+    }
   };
 
   return (

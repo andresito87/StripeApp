@@ -7,6 +7,7 @@ import api from "../../services/api";
 import { Button } from "./Button";
 import { Input } from "./Input";
 import StyledCardElement from "./StyledCardElement";
+import { toast } from "react-toastify";
 
 /*********************  ESTILOS  *********************/
 
@@ -29,19 +30,11 @@ const Title = styled.h2`
   margin-bottom: 1rem;
 `;
 
-const Message = styled.p`
-  font-size: 1rem;
-  margin-top: 1rem;
-  color: ${({ error }) => (error ? "#ef4444" : "#10b981")};
-`;
-
 /*********************  LÓGICA  *********************/
 
 const PaymentForm = ({ onPaymentSuccess }) => {
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
-  const [infoMessage, setInfoMessage] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
   const { user } = useContext(AuthContext); // Obtener usuario autenticado
   const stripe = useStripe();
   const elements = useElements();
@@ -49,13 +42,11 @@ const PaymentForm = ({ onPaymentSuccess }) => {
   // Función para realizar una recarga
   const handleMicropayment = async () => {
     if (!stripe || !elements || !user) {
-      setErrorMessage("API de Stripe o Datos de usuario no disponibles");
+      toast.error("API de Stripe o Datos de usuario no disponibles");
       return;
     }
 
     setLoading(true);
-    setErrorMessage("");
-    setInfoMessage("");
 
     try {
       // Crear el método de pago en Stripe
@@ -70,7 +61,7 @@ const PaymentForm = ({ onPaymentSuccess }) => {
         });
 
       if (pmError) {
-        setErrorMessage(`Error al crear el método de pago: ${pmError.message}`);
+        toast.error(`Error al crear el método de pago: ${pmError.message}`);
         setLoading(false);
         return;
       }
@@ -83,7 +74,7 @@ const PaymentForm = ({ onPaymentSuccess }) => {
       });
 
       if (response.status === 200) {
-        setInfoMessage(response.data.message);
+        toast.success(response.data.message);
         setAmount("");
 
         // Limpiar el CardElement
@@ -100,7 +91,7 @@ const PaymentForm = ({ onPaymentSuccess }) => {
         throw new Error(response.data.error || "Error en la transacción");
       }
     } catch (error) {
-      setErrorMessage(`${error.response?.data?.error || error.message}`);
+      toast.error(`${error.response?.data?.error || error.message}`);
       console.error("Error en la transacción:", error);
     } finally {
       setLoading(false);
@@ -127,12 +118,6 @@ const PaymentForm = ({ onPaymentSuccess }) => {
       >
         {loading ? "Procesando..." : "Recargar"}
       </Button>
-
-      {/* Muestra un mensaje informativo si hay uno */}
-      {infoMessage && <Message>{infoMessage}</Message>}
-
-      {/* Muestra un mensaje de error si hay uno */}
-      {errorMessage && <Message error>{errorMessage}</Message>}
     </PaymentContainer>
   );
 };

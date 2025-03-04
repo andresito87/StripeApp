@@ -12,6 +12,9 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Register from "./pages/Register";
 import TwoFactorActivation from "./pages/TwoFactorActivation";
+/* Libreria de toast usada en toda la aplicación */
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 // Definición del componente PrivateRoute para proteger rutas autenticadas
 const PrivateRoute = ({ children }) => {
@@ -72,6 +75,7 @@ function App() {
           <Route path="*" element={<Navigate to="/dashboard" />} />
         </Routes>
       </Router>
+      <ToastContainer />
     </AuthProvider>
   );
 }

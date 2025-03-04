@@ -101,10 +101,6 @@ class AuthController extends Controller
                 ], 200);
             }
 
-            // Verificar OTP
-            if (!$this->google2fa->verifyKey($user->google2fa_secret, $request->otp)) {
-                return response()->json(['message' => 'Código OTP inválido'], 401);
-            }
         }
 
         // Generar token JWT final (válido 1 hora)

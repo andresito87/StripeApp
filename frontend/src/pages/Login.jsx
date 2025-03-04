@@ -5,6 +5,7 @@ import { AuthContext } from "../context/AuthContext";
 import styled from "styled-components";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
+import { toast } from "react-toastify";
 
 /*********************  ESTILOS  *********************/
 
@@ -41,11 +42,6 @@ const Form = styled.form`
   gap: 1.2rem;
 `;
 
-const ErrorMessage = styled.p`
-  color: red;
-  font-size: 0.9rem;
-`;
-
 const SwitchText = styled.p`
   font-size: 0.9rem;
   color: #6b7280;
@@ -68,7 +64,6 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
-  const [error, setError] = useState("");
   const { login, verifyTwoFactor, isTwoFactorRequired, cancelTwoFactor } =
     useContext(AuthContext);
   const navigate = useNavigate();
@@ -76,9 +71,9 @@ const Login = () => {
   // Login inicial con email y contraseña
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    setError("");
     await login(email, password);
     if (!isTwoFactorRequired) {
+      toast.success("Usuario autenticado correctamente");
       navigate("/dashboard");
     }
   };
@@ -86,12 +81,12 @@ const Login = () => {
   // Verificación del OTP
   const handleOtpSubmit = async (e) => {
     e.preventDefault();
-    setError("");
     try {
       await verifyTwoFactor(otp);
+      toast.success("Usuario autenticado correctamente");
       navigate("/dashboard");
     } catch (err) {
-      setError(err.response?.data?.message || "Código OTP inválido");
+      toast.error(err.response?.data?.message || "Código OTP inválido");
     }
   };
 
@@ -124,7 +119,6 @@ const Login = () => {
               required
             />
             <Button type="submit">Ingresar</Button>
-            {error && <ErrorMessage>{error}</ErrorMessage>}
           </Form>
         ) : (
           // Si se requiere 2FA, se muestra el formulario para la verificación del OTP
@@ -138,7 +132,6 @@ const Login = () => {
               required
             />
             <Button type="submit">Verificar OTP</Button>
-            {error && <ErrorMessage>{error}</ErrorMessage>}
           </Form>
         )}
 

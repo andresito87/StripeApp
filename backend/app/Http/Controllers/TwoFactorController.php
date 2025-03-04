@@ -6,6 +6,7 @@ use App\Models\User;
 use Firebase\JWT\Key;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use PragmaRX\Google2FA\Google2FA;
 use Illuminate\Support\Facades\Validator;
 use Firebase\JWT\JWT;
@@ -107,6 +108,7 @@ class TwoFactorController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
+            'password' => 'required|string',
             'otp' => 'required|digits:6'
         ]);
 
@@ -116,12 +118,8 @@ class TwoFactorController extends Controller
 
         $user = User::where('email', $request->email)->first();
 
-        if (!$user) {
-            return response()->json(['message' => 'Usuario no encontrado'], 404);
-        }
-
-        if (!$user->google2fa_enabled) {
-            return response()->json(['message' => 'Este usuario no tiene 2FA activado'], 400);
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return response()->json(['message' => 'Credenciales incorrectas'], 401);
         }
 
         // Verificar OTP

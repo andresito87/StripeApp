@@ -5,6 +5,7 @@ import { AuthContext } from "../../context/AuthContext";
 import api from "../../services/api";
 import { Button } from "./Button";
 import { Input } from "./Input";
+import { toast } from "react-toastify";
 
 /*********************  ESTILOS  *********************/
 const RefundContainer = styled.div`
@@ -26,30 +27,20 @@ const Title = styled.h2`
   margin-bottom: 1rem;
 `;
 
-const Message = styled.p`
-  font-size: 1rem;
-  margin-top: 1rem;
-  color: ${(props) => (props.error ? "#ef4444" : "#10b981")};
-`;
-
 /*********************  LÓGICA  *********************/
 
 const RefundForm = ({ onRefundSuccess }) => {
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
-  const [infoMessage, setInfoMessage] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
   const { user } = useContext(AuthContext); // Obtener usuario autenticado
 
   const handleRefund = async () => {
     if (!user) {
-      setErrorMessage("Usuario no autenticado.");
+      toast.error("Usuario no autenticado.");
       return;
     }
 
     setLoading(true);
-    setErrorMessage("");
-    setInfoMessage("");
 
     try {
       // Enviar la solicitud de reembolso al backend
@@ -59,7 +50,9 @@ const RefundForm = ({ onRefundSuccess }) => {
       });
 
       if (response.data.refund.status === "succeeded") {
-        setInfoMessage("¡Reembolso procesado con éxito!");
+        toast.success(
+          response.data.message || "Reembolso solicitado con éxito"
+        );
         setAmount("");
 
         // Notificar al Dashboard que la operación fue exitosa
@@ -70,7 +63,7 @@ const RefundForm = ({ onRefundSuccess }) => {
         throw new Error(response.data.error || "Error en el reembolso");
       }
     } catch (error) {
-      setErrorMessage(
+      toast.error(
         `Error en el reembolso: ${error.response?.data?.error || error.message}`
       );
       console.error("Error en el reembolso:", error);
@@ -93,12 +86,6 @@ const RefundForm = ({ onRefundSuccess }) => {
       <Button onClick={handleRefund} disabled={loading}>
         {loading ? "Procesando..." : "Solicitar Reembolso"}
       </Button>
-
-      {/* Muestra un mensaje informativo si hay uno */}
-      {infoMessage && <Message>{infoMessage}</Message>}
-
-      {/* Muestra un mensaje de error si hay uno */}
-      {errorMessage && <Message error>{errorMessage}</Message>}
     </RefundContainer>
   );
 };
