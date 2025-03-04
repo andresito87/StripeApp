@@ -4,7 +4,7 @@ import { useState } from "react";
 
 /*********************  ESTILOS  *********************/
 
-const StyledCardElementWrapper = styled.div`
+const StyledCardElementWrapper = styled.div<{ $isFocused: boolean }>`
   width: 100%;
   padding: 12px;
   border: 2px solid ${(props) => (props.$isFocused ? "#007bff" : "#ccc")};

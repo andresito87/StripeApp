@@ -1,11 +1,12 @@
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import api from "../services/api";
-import { AuthContext } from "../context/AuthContext";
+import { useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
+import { AxiosError } from "axios";
 
 /*********************  ESTILOS  *********************/
 
@@ -46,7 +47,7 @@ const QRImage = styled.img`
 /*********************  LÓGICA  *********************/
 
 const TwoFactorActivation = () => {
-  const [qrImage, setQrImage] = useState(null);
+  const [qrImage, setQrImage] = useState("");
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -67,7 +68,7 @@ const TwoFactorActivation = () => {
     generateSecret();
   }, []);
 
-  const { fetchUser } = useContext(AuthContext);
+  const { fetchUser } = useAuth();
 
   // Función encargada de verificar el 2fa y su código secreto asociado en la app
   const handleVerify = async (e) => {
@@ -78,11 +79,16 @@ const TwoFactorActivation = () => {
       await api.post("/2fa/verify-enablement", { otp });
       await fetchUser(); // Actualiza el objeto user en el contexto
       toast.success("2FA habilitado correctamente.");
-    } catch (error) {
-      console.error("Error al verificar OTP:", error);
-      toast.error(
-        error.response?.data?.message || "Código OTP inválido o expirado."
-      );
+    } catch (error: unknown) {
+      if (error instanceof AxiosError) {
+        console.error("Error al verificar OTP:", error);
+        toast.error(
+          error.response?.data?.message || "Código OTP inválido o expirado."
+        );
+      } else {
+        console.error("Error desconocido:", error);
+        toast.error("Hubo un error desconocido.");
+      }
     } finally {
       setLoading(false);
     }

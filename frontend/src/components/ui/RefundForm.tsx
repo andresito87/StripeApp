@@ -1,11 +1,12 @@
-import { useState, useContext } from "react";
+import { useState } from "react";
 import styled from "styled-components";
 import PropTypes from "prop-types";
-import { AuthContext } from "../../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import api from "../../services/api";
 import { Button } from "./Button";
 import { Input } from "./Input";
 import { toast } from "react-toastify";
+import axios from "axios";
 
 /*********************  ESTILOS  *********************/
 const RefundContainer = styled.div`
@@ -32,7 +33,7 @@ const Title = styled.h2`
 const RefundForm = ({ onRefundSuccess }) => {
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
-  const { user } = useContext(AuthContext); // Obtener usuario autenticado
+  const { user } = useAuth(); // Obtener usuario autenticado
 
   const handleRefund = async () => {
     if (!user) {
@@ -63,10 +64,37 @@ const RefundForm = ({ onRefundSuccess }) => {
         throw new Error(response.data.error || "Error en el reembolso");
       }
     } catch (error) {
-      toast.error(
-        `Error en el reembolso: ${error.response?.data?.error || error.message}`
-      );
-      console.error("Error en el reembolso:", error);
+      // Verificar si es un error de respuesta (responde con 4xx o 5xx)
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          // Error con respuesta del servidor (4xx, 5xx)
+          toast.error(
+            `Error en el reembolso: ${
+              error.response.data?.error ||
+              error.response.statusText ||
+              "Error desconocido"
+            }`
+          );
+          console.error("Error en el reembolso - Respuesta:", error.response);
+        } else if (error.request) {
+          // Error de red: no se recibió respuesta del servidor
+          toast.error(
+            "No se recibió respuesta del servidor. Intenta más tarde."
+          );
+          console.error("Error en el reembolso - Solicitud:", error.request);
+        } else {
+          // Error relacionado con la configuración de la solicitud
+          toast.error(`Error de configuración: ${error.message}`);
+          console.error(
+            "Error en el reembolso - Configuración:",
+            error.message
+          );
+        }
+      } else {
+        // Si el error no es un AxiosError, se trata de un error desconocido
+        toast.error("Error desconocido");
+        console.error("Error en el reembolso - Desconocido:", error);
+      }
     } finally {
       setLoading(false);
     }
@@ -81,6 +109,7 @@ const RefundForm = ({ onRefundSuccess }) => {
         placeholder="Ingrese la cantidad a reembolsar (€)"
         value={amount}
         onChange={(e) => setAmount(e.target.value)}
+        required
       />
 
       <Button onClick={handleRefund} disabled={loading}>

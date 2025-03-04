@@ -1,14 +1,15 @@
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AuthContext } from "../context/AuthContext";
+import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import styled from "styled-components";
 import { Button } from "../components/ui/Button";
-import PaymentForm from "../components/ui/PaymentForm";
+import { PaymentForm } from "../components/ui/PaymentForm";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import RefundForm from "../components/ui/RefundForm";
 import { toast } from "react-toastify";
+import { AxiosError } from "axios";
 
 /*********************  ESTILOS  *********************/
 const DashboardContainer = styled.div`
@@ -89,11 +90,19 @@ const RefundButton = styled(Button)`
 // Inicializamos Stripe
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
+interface Transaction {
+  id_wallet: string;
+  description: string;
+  amount: number;
+  date_create: string;
+  id_wallet_type: number;
+}
+
 const Dashboard = () => {
-  const { user, logout } = useContext(AuthContext);
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [balance, setBalance] = useState(0);
-  const [transactions, setTransactions] = useState([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]); // Aquí indicamos el tipo de transactions
 
   // Funciones para refrescar el estado
   const fetchBalance = async () => {
@@ -123,7 +132,7 @@ const Dashboard = () => {
   const handleRefund = async (transaction) => {
     try {
       const response = await api.post(`/wallet/popFromRecharge`, {
-        id_user: user.id_user,
+        id_user: user?.id_user,
         amount: transaction.amount,
         payment_intent_id: transaction.id_transaction,
       });
@@ -133,12 +142,18 @@ const Dashboard = () => {
       // Actualizamos balance y transacciones
       await fetchBalance();
       await fetchTransactions();
-    } catch (error) {
-      console.error("Error al solicitar reembolso:", error);
-      toast.error(
-        error.response?.data?.error ||
-          "Hubo un error al solicitar el reembolso."
-      );
+    } catch (error: unknown) {
+      if (error instanceof AxiosError) {
+        console.error("Error al solicitar reembolso:", error);
+        toast.error(
+          error.response?.data?.error ||
+            "Hubo un error al solicitar el reembolso."
+        );
+      } else {
+        // Manejo de errores que no son de Axios (puedes agregar un manejo de errores general aquí)
+        console.error("Error desconocido:", error);
+        toast.error("Hubo un error desconocido.");
+      }
     }
   };
 
@@ -171,7 +186,7 @@ const Dashboard = () => {
       </Card>
 
       {/* Bloque de Activación de 2FA */}
-      {user && !user.google2fa_enabled && (
+      {user && !user?.google2fa_enabled && (
         <TwoFAContainer>
           <Title>Seguridad</Title>
           <p>Activa la autenticación de dos factores para mayor seguridad.</p>

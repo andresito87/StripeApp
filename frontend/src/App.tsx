@@ -17,15 +17,25 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 // Definición del componente PrivateRoute para proteger rutas autenticadas
-const PrivateRoute = ({ children }) => {
-  const { token } = React.useContext(AuthContext);
-  return token ? children : <Navigate to="/login" />;
+const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
+  const auth = React.useContext(AuthContext);
+
+  if (!auth || !auth.token) {
+    return <Navigate to="/login" />;
+  }
+
+  return children;
 };
 
 // Definición del componente PublicRoute para evitar que usuarios autenticados accedan a login o registro
-const PublicRoute = ({ children }) => {
-  const { token } = React.useContext(AuthContext);
-  return token ? <Navigate to="/dashboard" /> : children;
+const PublicRoute = ({ children }: { children: React.ReactNode }) => {
+  const auth = React.useContext(AuthContext);
+
+  if (auth && auth.token) {
+    return <Navigate to="/dashboard" />;
+  }
+
+  return children;
 };
 
 PrivateRoute.propTypes = {

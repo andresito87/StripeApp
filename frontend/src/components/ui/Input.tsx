@@ -1,5 +1,4 @@
 import styled from "styled-components";
-import PropTypes from "prop-types";
 
 /*********************  ESTILOS  *********************/
 
@@ -33,7 +32,7 @@ export const Input = ({
   placeholder,
   value,
   onChange,
-  className,
+  required,
 }) => {
   return (
     <StyledInput
@@ -41,16 +40,7 @@ export const Input = ({
       placeholder={placeholder}
       value={value}
       onChange={onChange}
-      className={className}
+      required={required}
     />
   );
-};
-
-// Validación de props, tipos de datos
-Input.propTypes = {
-  type: PropTypes.string,
-  placeholder: PropTypes.string,
-  value: PropTypes.string.isRequired,
-  onChange: PropTypes.func.isRequired,
-  className: PropTypes.string,
 };

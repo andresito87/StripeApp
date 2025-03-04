@@ -1,11 +1,12 @@
 // src/pages/Login.jsx
-import { useState, useContext } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { AuthContext } from "../context/AuthContext";
+import { useAuth } from "../context/AuthContext";
 import styled from "styled-components";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { toast } from "react-toastify";
+import { AxiosError } from "axios";
 
 /*********************  ESTILOS  *********************/
 
@@ -65,7 +66,7 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
   const { login, verifyTwoFactor, isTwoFactorRequired, cancelTwoFactor } =
-    useContext(AuthContext);
+    useAuth();
   const navigate = useNavigate();
 
   // Login inicial con email y contraseña
@@ -85,8 +86,15 @@ const Login = () => {
       await verifyTwoFactor(otp);
       toast.success("Usuario autenticado correctamente");
       navigate("/dashboard");
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Código OTP inválido");
+    } catch (err: unknown) {
+      if (err instanceof AxiosError) {
+        // Manejo de errores específicos de Axios
+        console.error("Error al realizar la solicitud:", err);
+        toast.error(err.response?.data?.message || "Código OTP inválido");
+      } else {
+        console.error("Error desconocido:", err);
+        toast.error("Hubo un error desconocido.");
+      }
     }
   };
 

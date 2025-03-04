@@ -1,13 +1,13 @@
-import { useState, useContext } from "react";
-import PropTypes from "prop-types";
+import { useState } from "react";
 import { useStripe, useElements, CardElement } from "@stripe/react-stripe-js";
 import styled from "styled-components";
-import { AuthContext } from "../../context/AuthContext";
 import api from "../../services/api";
 import { Button } from "./Button";
 import { Input } from "./Input";
 import StyledCardElement from "./StyledCardElement";
 import { toast } from "react-toastify";
+import axios from "axios";
+import { useAuth } from "../../context/AuthContext";
 
 /*********************  ESTILOS  *********************/
 
@@ -32,10 +32,10 @@ const Title = styled.h2`
 
 /*********************  LÓGICA  *********************/
 
-const PaymentForm = ({ onPaymentSuccess }) => {
+export const PaymentForm = ({ onPaymentSuccess }) => {
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
-  const { user } = useContext(AuthContext); // Obtener usuario autenticado
+  const { user } = useAuth(); // Obtener usuario autenticado
   const stripe = useStripe();
   const elements = useElements();
 
@@ -49,11 +49,21 @@ const PaymentForm = ({ onPaymentSuccess }) => {
     setLoading(true);
 
     try {
+      // Obtener el elemento CardElement
+      const cardElement = elements.getElement(CardElement);
+
+      // Verificar si CardElement está presente
+      if (!cardElement) {
+        toast.error("El elemento Stripe de tarjeta no está disponible");
+        setLoading(false);
+        return;
+      }
+
       // Crear el método de pago en Stripe
       const { error: pmError, paymentMethod } =
         await stripe.createPaymentMethod({
           type: "card",
-          card: elements.getElement(CardElement),
+          card: cardElement, // me aseguro de que no es null
           billing_details: {
             email: user.email,
             name: user.name,
@@ -91,8 +101,38 @@ const PaymentForm = ({ onPaymentSuccess }) => {
         throw new Error(response.data.error || "Error en la transacción");
       }
     } catch (error) {
-      toast.error(`${error.response?.data?.error || error.message}`);
-      console.error("Error en la transacción:", error);
+      // Aseguramos que el error sea un AxiosError
+      if (axios.isAxiosError(error)) {
+        // Si el error tiene una respuesta, mostrar el mensaje de error de la respuesta
+        if (error.response) {
+          // Error con respuesta del servidor (4xx, 5xx)
+          toast.error(
+            `${
+              error.response.data?.error ||
+              error.response.statusText ||
+              "Error en la transacción"
+            }`
+          );
+          console.error("Error en la transacción:", error.response);
+        } else if (error.request) {
+          // Error de red: no se recibió respuesta
+          toast.error(
+            "No se recibió respuesta del servidor. Intenta más tarde."
+          );
+          console.error("No se recibió respuesta:", error.request);
+        } else {
+          // Error relacionado con la configuración de la solicitud
+          toast.error(`Error en la solicitud: ${error.message}`);
+          console.error(
+            "Error en la configuración de la solicitud:",
+            error.message
+          );
+        }
+      } else {
+        // Si el error no es un AxiosError, lo manejamos genéricamente
+        toast.error(`Error desconocido`);
+        console.error("Error desconocido:", error);
+      }
     } finally {
       setLoading(false);
     }
@@ -108,6 +148,7 @@ const PaymentForm = ({ onPaymentSuccess }) => {
         placeholder="Ingrese la cantidad (€)"
         value={amount}
         onChange={(e) => setAmount(e.target.value)}
+        required
       />
 
       {/* Elemento de la tarjeta de Stripe estilizado para capturar los datos de pago */}
@@ -121,10 +162,3 @@ const PaymentForm = ({ onPaymentSuccess }) => {
     </PaymentContainer>
   );
 };
-
-// Validación de props, tipos de datos
-PaymentForm.propTypes = {
-  onPaymentSuccess: PropTypes.func,
-};
-
-export default PaymentForm;

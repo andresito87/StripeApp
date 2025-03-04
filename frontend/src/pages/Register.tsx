@@ -1,10 +1,11 @@
-import { useState, useContext } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { AuthContext } from "../context/AuthContext";
+import { useAuth } from "../context/AuthContext";
 import styled from "styled-components";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { toast } from "react-toastify";
+import { AxiosError } from "axios";
 
 /*********************  ESTILOS  *********************/
 
@@ -62,7 +63,7 @@ const Register = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { register } = useContext(AuthContext);
+  const { register } = useAuth();
   const navigate = useNavigate();
 
   // Función ejecutada al enviar el formulario
@@ -76,16 +77,23 @@ const Register = () => {
     }
 
     try {
-      await register({ name, email, password });
+      await register(name, email, password);
       toast.success("Usuario registrado correctamente");
       navigate("/login");
-    } catch (err) {
-      toast.error(
-        "Error: " +
-          (err.response?.data?.email[0]
-            ? "El email ya esta en uso"
-            : "Ocurrió un error al registrar.")
-      );
+    } catch (err: unknown) {
+      if (err instanceof AxiosError) {
+        // Manejo de errores específicos de Axios
+        console.error("Error al realizar la solicitud:", err);
+        toast.error(
+          "Error: " +
+            (err.response?.data?.email[0]
+              ? "El email ya esta en uso"
+              : "Ocurrió un error al registrar.")
+        );
+      } else {
+        console.error("Error desconocido:", err);
+        toast.error("Hubo un error desconocido.");
+      }
     }
   };
 
@@ -100,18 +108,21 @@ const Register = () => {
             placeholder="Nombre"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            required
           />
           <Input
             type="email"
             placeholder="Correo Electrónico"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            required
           />
           <Input
             type="password"
             placeholder="Contraseña"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            required
           />
           <Button type="submit">Registrar</Button>
         </Form>
