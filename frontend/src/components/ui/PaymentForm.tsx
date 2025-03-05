@@ -35,7 +35,7 @@ const Title = styled.h2`
 export const PaymentForm = ({ onPaymentSuccess }) => {
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
-  const { user } = useAuth(); // Obtener usuario autenticado
+  const { user } = useAuth();
   const stripe = useStripe();
   const elements = useElements();
 
@@ -75,7 +75,7 @@ export const PaymentForm = ({ onPaymentSuccess }) => {
         setLoading(false);
         return;
       }
-
+      console.log(user);
       // Enviar al backend el paymentMethod.id para que el servidor gestione la transacción
       const response = await api.post("/wallet/put", {
         id_user: user.id_user,

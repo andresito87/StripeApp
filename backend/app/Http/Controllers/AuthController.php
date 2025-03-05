@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Wallet;
 use Illuminate\Http\Request;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
@@ -160,7 +161,15 @@ class AuthController extends Controller
             $decoded = JWT::decode($token, new Key($this->jwt_secret, 'HS256'));
             $user = User::find($decoded->sub);
 
-            return response()->json($user);
+            $totalBalance = Wallet::where('id_user', $user->id_user)->sum('amount');
+
+            return response()->json([
+                'id_user' => $user->id_user,
+                'name' => $user->name,
+                'email' => $user->email,
+                'balance' => $totalBalance
+            ]);
+
         } catch (\Exception $e) {
             return response()->json(['message' => 'Token inválido'], 401);
         }

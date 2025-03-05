@@ -118,6 +118,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setPendingPassword("");
   }, []);
 
+  const updateBalance = (newBalance: number) => {
+    setUser((user) => {
+      if (user) {
+        return { ...user, balance: newBalance };
+      }
+      return user;
+    });
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -130,6 +139,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         fetchUser,
         isTwoFactorRequired: !!isTwoFA,
         cancelTwoFactor,
+        updateBalance,
       }}
     >
       {children}

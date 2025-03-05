@@ -2,6 +2,7 @@ import { createContext, useContext } from "react";
 
 export interface User {
   id_user: string;
+  balance: number;
   name: string;
   email: string;
   google2fa_enabled: boolean;
@@ -17,6 +18,7 @@ export interface AuthContextType {
   isTwoFactorRequired: boolean;
   verifyTwoFactor: (otp: string) => Promise<string | void>;
   cancelTwoFactor: () => void;
+  updateBalance: (number) => void;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(

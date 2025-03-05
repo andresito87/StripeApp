@@ -81,6 +81,24 @@ function App() {
 
           <Route path="/2fa-activation" element={<TwoFactorActivation />} />
 
+          <Route
+            path="/refund"
+            element={
+              <PrivateRoute>
+                <Dashboard />
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/history"
+            element={
+              <PrivateRoute>
+                <Dashboard />
+              </PrivateRoute>
+            }
+          />
+
           {/* Redirigir cualquier ruta desconocida al dashboard si está autenticado, o al login si no */}
           <Route path="*" element={<Navigate to="/dashboard" />} />
         </Routes>

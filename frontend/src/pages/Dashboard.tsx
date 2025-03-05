@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import styled from "styled-components";
@@ -10,6 +10,7 @@ import { loadStripe } from "@stripe/stripe-js";
 import RefundForm from "../components/ui/RefundForm";
 import { toast } from "react-toastify";
 import { AxiosError } from "axios";
+import { Navbar } from "../components/ui/Navbar";
 
 /*********************  ESTILOS  *********************/
 const DashboardContainer = styled.div`
@@ -99,16 +100,19 @@ interface Transaction {
 }
 
 const Dashboard = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [balance, setBalance] = useState(0);
-  const [transactions, setTransactions] = useState<Transaction[]>([]); // Aquí indicamos el tipo de transactions
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const location = useLocation();
+
+  const { updateBalance } = useAuth();
 
   // Funciones para refrescar el estado
   const fetchBalance = async () => {
     try {
       const response = await api.get("/wallet/balance");
-      setBalance(response.data.balance);
+      updateBalance(response.data.balance);
     } catch (error) {
       console.error("Error al obtener el saldo:", error);
     }
@@ -176,61 +180,66 @@ const Dashboard = () => {
 
   return (
     <DashboardContainer>
-      {/* Bloque de Saldo y Cerrar Sesión */}
-      <Card>
-        <Title>Bienvenid@, {user?.name}</Title>
-        <Balance>Saldo actual: €{balance}</Balance>
-        <Button onClick={logout} variant="destructive">
-          Cerrar Sesión
-        </Button>
-      </Card>
+      {/* Barra de navegación */}
+      <Navbar />
 
-      {/* Bloque de Activación de 2FA */}
-      {user && !user?.google2fa_enabled && (
-        <TwoFAContainer>
-          <Title>Seguridad</Title>
-          <p>Activa la autenticación de dos factores para mayor seguridad.</p>
-          <Button onClick={handleActivateTwoFA}>Activar 2FA</Button>
-        </TwoFAContainer>
+      {/* Bloque de Saldo y Cerrar Sesión */}
+      {location.pathname === "/dashboard" && (
+        <>
+          {/* Bloque de Activación de 2FA */}
+          {user && !user?.google2fa_enabled && (
+            <TwoFAContainer>
+              <Title>Seguridad</Title>
+              <p>
+                Activa la autenticación de dos factores para mayor seguridad.
+              </p>
+              <Button onClick={handleActivateTwoFA}>Activar 2FA</Button>
+            </TwoFAContainer>
+          )}
+
+          {/* Bloque de Formulario de Pago */}
+          <Card>
+            <Elements stripe={stripePromise}>
+              <PaymentForm onPaymentSuccess={handlePaymentSuccess} />
+            </Elements>
+          </Card>
+        </>
       )}
 
-      {/* Bloque de Formulario de Pago */}
-      <Card>
-        <Elements stripe={stripePromise}>
-          <PaymentForm onPaymentSuccess={handlePaymentSuccess} />
-        </Elements>
-      </Card>
-
       {/* Nuevo Bloque de Reembolso desde Saldo */}
-      <Card>
-        <RefundForm onRefundSuccess={handleRefundSuccess} />
-      </Card>
+      {location.pathname === "/refund" && (
+        <Card>
+          <RefundForm onRefundSuccess={handleRefundSuccess} />
+        </Card>
+      )}
 
       {/* Bloque de Historial de Transacciones */}
-      <TransactionsContainer>
-        <Title>Historial de Transacciones</Title>
-        <TransactionList>
-          {transactions.length > 0 ? (
-            transactions.map((transaction) => (
-              <TransactionItem key={transaction.id_wallet}>
-                <span>
-                  {transaction.description} - {transaction.amount}€ -{" "}
-                  {new Date(transaction.date_create).toLocaleString()}
-                </span>
-                {!(transaction.id_wallet_type === 1) ? (
-                  <RefundButton disabled>Reembolsado</RefundButton>
-                ) : (
-                  <RefundButton onClick={() => handleRefund(transaction)}>
-                    Reembolso
-                  </RefundButton>
-                )}
-              </TransactionItem>
-            ))
-          ) : (
-            <p>No hay transacciones registradas.</p>
-          )}
-        </TransactionList>
-      </TransactionsContainer>
+      {location.pathname === "/history" && (
+        <TransactionsContainer>
+          <Title>Historial de Transacciones</Title>
+          <TransactionList>
+            {transactions.length > 0 ? (
+              transactions.map((transaction) => (
+                <TransactionItem key={transaction.id_wallet}>
+                  <span>
+                    {transaction.description} - {transaction.amount}€ -{" "}
+                    {new Date(transaction.date_create).toLocaleString()}
+                  </span>
+                  {!(transaction.id_wallet_type === 1) ? (
+                    <RefundButton disabled>Reembolsado</RefundButton>
+                  ) : (
+                    <RefundButton onClick={() => handleRefund(transaction)}>
+                      Reembolso
+                    </RefundButton>
+                  )}
+                </TransactionItem>
+              ))
+            ) : (
+              <p>No hay transacciones registradas.</p>
+            )}
+          </TransactionList>
+        </TransactionsContainer>
+      )}
     </DashboardContainer>
   );
 };
