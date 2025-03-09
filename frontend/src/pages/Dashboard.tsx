@@ -93,6 +93,7 @@ const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 interface Transaction {
   id_wallet: string;
+  id_transaction: string;
   description: string;
   amount: number;
   date_create: string;
@@ -133,13 +134,16 @@ const Dashboard = () => {
     fetchTransactions();
   }, []);
 
-  const handleRefund = async (transaction) => {
+  const handleRefund = async (transaction: Transaction) => {
     try {
-      const response = await api.post(`/wallet/popFromRecharge`, {
-        id_user: user?.id_user,
-        amount: transaction.amount,
-        payment_intent_id: transaction.id_transaction,
-      });
+      const response = await api.post(
+        `/wallet/refund/${transaction.id_transaction}`,
+        {
+          id_user: user?.id_user,
+          amount: transaction.amount,
+          payment_intent_id: transaction.id_transaction,
+        }
+      );
 
       toast.success(response.data.message || "Reembolso solicitado con éxito");
 

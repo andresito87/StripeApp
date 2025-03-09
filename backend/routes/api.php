@@ -23,8 +23,10 @@ Route::middleware(['jwt'])->group(function () {
     // Rutas para el Wallet
     Route::get('/wallet/balance', [WalletController::class, 'getBalance']);
     Route::post('/wallet/put', [WalletController::class, 'put']);
-    Route::post('/wallet/popFromRecharge', [WalletController::class, 'popFromRecharge']);
-    Route::post('/wallet/popFromBalance', [WalletController::class, 'popFromBalance']);
+    // Reembolso de una transaccion
+    Route::post('/wallet/refund/{id}', [WalletController::class, 'popFromRecharge']);
+    // Reembolso de una cantidad
+    Route::post('/wallet/refund', [WalletController::class, 'popFromBalance']);
     Route::get('/wallet/transactions', [WalletController::class, 'getTransactions']);
 
     // Rutas para habilitar 2FA en la cuenta
