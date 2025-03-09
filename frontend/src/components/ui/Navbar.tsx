@@ -80,7 +80,7 @@ export const Navbar = () => {
       <UserInfo>
         <Username>{auth?.user?.name}</Username>
         <Saldo>Saldo: {auth?.user?.balance} €</Saldo>
-        <LogoutButton onClick={handleLogout}>Logout</LogoutButton>
+        <LogoutButton onClick={handleLogout}>Salir</LogoutButton>
       </UserInfo>
     </NavbarContainer>
   );
