@@ -96,7 +96,8 @@ interface Transaction {
   id_transaction: string;
   description: string;
   amount: number;
-  date_create: string;
+  date_created: string;
+  date_refunded?: string;
   id_wallet_type: number;
 }
 
@@ -113,7 +114,9 @@ const Dashboard = () => {
   const fetchBalance = async () => {
     try {
       const response = await api.get("/wallet/balance");
-      updateBalance(response.data.balance);
+      const newBalance = response.data.balance;
+      setBalance(newBalance); // Actualizamos el balance localmente
+      updateBalance(newBalance); // También actualizamos el contexto si es necesario
     } catch (error) {
       console.error("Error al obtener el saldo:", error);
     }
@@ -227,7 +230,9 @@ const Dashboard = () => {
                 <TransactionItem key={transaction.id_wallet}>
                   <span>
                     {transaction.description} - {transaction.amount}€ -{" "}
-                    {new Date(transaction.date_create).toLocaleString()}
+                    {transaction.date_refunded
+                      ? new Date(transaction.date_refunded).toLocaleString()
+                      : new Date(transaction.date_created).toLocaleString()}
                   </span>
                   {!(transaction.id_wallet_type === 1) ? (
                     <RefundButton disabled>Reembolsado</RefundButton>

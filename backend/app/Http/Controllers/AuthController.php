@@ -161,7 +161,9 @@ class AuthController extends Controller
             $decoded = JWT::decode($token, new Key($this->jwt_secret, 'HS256'));
             $user = User::find($decoded->sub);
 
-            $totalBalance = Wallet::where('id_user', $user->id_user)->sum('amount');
+            $totalBalance = Wallet::where('id_user', $user->id_user)
+                ->whereNull('date_refunded')
+                ->sum('amount');
 
             return response()->json([
                 'id_user' => $user->id_user,

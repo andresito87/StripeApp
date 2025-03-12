@@ -11,14 +11,14 @@ export interface User {
 export interface AuthContextType {
   user: User | null;
   token?: string;
-  login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<string>;
+  register: (name: string, email: string, password: string) => Promise<string>;
   logout: () => void;
   fetchUser: () => void;
   isTwoFactorRequired: boolean;
   verifyTwoFactor: (otp: string) => Promise<string | void>;
   cancelTwoFactor: () => void;
-  updateBalance: (number) => void;
+  updateBalance: (newBalance: number) => void;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(

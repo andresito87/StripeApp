@@ -72,10 +72,12 @@ const Login = () => {
   // Login inicial con email y contraseña
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    await login(email, password);
-    if (!isTwoFactorRequired) {
+    const response = await login(email, password);
+    if (response == "Login exitoso" && !isTwoFactorRequired) {
       toast.success("Usuario autenticado correctamente");
       navigate("/dashboard");
+    } else if (response != "Login exitoso" && !isTwoFactorRequired) {
+      toast.error("Credenciales incorrectas");
     }
   };
 

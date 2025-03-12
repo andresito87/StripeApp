@@ -1,12 +1,17 @@
 // src/context/AuthProvider.jsx
 import { useState, useEffect, useCallback } from "react";
-import PropTypes from "prop-types";
 import api from "../services/api";
 import { AuthContext, User } from "./AuthContext";
 import { AxiosError } from "axios";
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User>({
+    id_user: "",
+    name: "",
+    email: "",
+    balance: 0,
+    google2fa_enabled: false,
+  });
   const [token, setToken] = useState(localStorage.getItem("token") || "");
   const [isTwoFA, setIsTwoFA] = useState(false);
   const [pendingEmail, setPendingEmail] = useState(""); // permite almacenar temporalmente el email del usuario cuando en un 2fa login
@@ -14,7 +19,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Función para realizar el deslogueo
   const logout = useCallback(() => {
-    setUser(null);
+    setUser({
+      id_user: "",
+      name: "",
+      email: "",
+      balance: 0,
+      google2fa_enabled: false,
+    });
     setToken("");
     localStorage.removeItem("token");
     setIsTwoFA(false);
@@ -40,29 +51,33 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [token, fetchUser]);
 
   // Función que permite la autenticación del usuario
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<string> => {
     try {
       const response = await api.post("/login", { email, password });
       if (response.data.token) {
         setToken(response.data.token);
         localStorage.setItem("token", response.data.token);
-        fetchUser();
+        await fetchUser();
+        return "Login exitoso";
       } else {
         setIsTwoFA(true);
         setPendingEmail(email);
         setPendingPassword(password);
+        return "Se requiere autenticación de dos factores";
       }
     } catch (error: unknown) {
+      let errorResponse = "Error en login: ";
+
       if (error instanceof AxiosError) {
-        console.error(
-          "Error en login:",
-          error.response?.data?.message || error.message
-        );
+        errorResponse += error.response?.data?.message ?? error.message;
       } else if (error instanceof Error) {
-        console.error("Error en login:", error.message);
+        errorResponse += error.message;
       } else {
-        console.error("Error en login: Error desconocido");
+        errorResponse += "Error desconocido";
       }
+
+      console.error(errorResponse);
+      return errorResponse;
     }
   };
 
@@ -108,7 +123,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Función que permite el registro de nuevos usuarios
   const register = async (name: string, email: string, password: string) => {
-    await api.post("/register", { name, email, password });
+    const response = await api.post("/register", { name, email, password });
+    if (response.status != 201) {
+      return "Error en el registro";
+    } else {
+      return "Registro exitoso";
+    }
   };
 
   // Función para cancelar el flujo de 2FA y reiniciar el proceso de login
@@ -120,10 +140,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const updateBalance = (newBalance: number) => {
     setUser((user) => {
+      // Verificar que `user` no sea null
       if (user) {
         return { ...user, balance: newBalance };
       }
-      return user;
+      return user; // Retorna el valor actual si es null
     });
   };
 

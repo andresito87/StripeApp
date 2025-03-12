@@ -15,7 +15,7 @@ return new class extends Migration {
             $table->id('id_wallet'); // Llave primaria con AUTO_INCREMENT
             $table->string('description', 64);
             $table->float('amount');
-            $table->dateTime('date_create')->default(now());
+            $table->dateTime('date_created')->default(now());
             $table->string('status', 8)->nullable();
             $table->string('id_transaction', 256)->nullable();
             $table->unsignedBigInteger('id_wallet_type');

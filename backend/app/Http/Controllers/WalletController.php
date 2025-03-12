@@ -67,11 +67,15 @@ class WalletController extends Controller
                 'description' => 'Recarga de saldo',
                 'amount' => $request->amount,
                 'id_wallet_type' => 1, // 1 = Recarga (PUSH)
-                'id_transaction' => $paymentIntent->id
+                'id_transaction' => $paymentIntent->id,
+                'date_created' => now(),
+                'date_verified' => now()
             ]);
 
             // Obtener el saldo actualizado del usuario
-            $saldoTotal = Wallet::where('id_user', $request->id_user)->sum('amount');
+            $saldoTotal = Wallet::where('id_user', $user->id_user)
+                ->whereNull('date_refunded')
+                ->sum('amount');
 
             return response()->json([
                 'message' => 'Saldo añadido con éxito',
@@ -111,10 +115,12 @@ class WalletController extends Controller
 
         try {
             // Obtener el saldo actual del usuario sumando todas sus transacciones
-            $availableBalance = Wallet::where('id_user', $request->id_user)->sum('amount');
+            $availableBalance = Wallet::where('id_user', $request->id_user)
+                ->whereNull('date_refunded')
+                ->sum('amount');
 
             if ($availableBalance < $request->amount) {
-                return response()->json(['error' => 'Fondos insuficientes'], 400);
+                return response()->json(['error' => 'Fondos insuficientes'], 409);
             }
 
             // Obtener la información del PaymentIntent de Stripe
@@ -122,7 +128,7 @@ class WalletController extends Controller
             $originalAmount = $paymentIntent->amount / 100; // Convertir de centavos a euros
 
             if ($request->amount > $originalAmount) {
-                return response()->json(['error' => 'El monto del reembolso no puede ser mayor que la transacción original'], 400);
+                return response()->json(['error' => 'El monto del reembolso no puede ser mayor que la transacción original'], 409);
             }
 
             // Verificar si ya se han hecho reembolsos parciales previos
@@ -133,7 +139,7 @@ class WalletController extends Controller
             $totalRefunded = abs($existingRefunds) + $request->amount;
 
             if ($totalRefunded > $originalAmount) {
-                return response()->json(['error' => 'El monto total reembolsado supera la transacción original'], 400);
+                return response()->json(['error' => 'La cantidad total reembolsada supera la transacción original'], 400);
             }
 
             // Procesar reembolso parcial en Stripe
@@ -142,20 +148,21 @@ class WalletController extends Controller
                 'amount' => $request->amount * 100, // Convertir a centavos
             ]);
 
-            // Registrar transacción en la tabla wallet (POP)
-            $transaction = Wallet::create([
-                'id_user' => $request->id_user,
-                'description' => 'Reembolso parcial de saldo',
-                'amount' => -$request->amount, // Se almacena como negativo
-                'id_wallet_type' => 2, // POP
-                'id_transaction' => $refund->id
-            ]);
+            $transaction = Wallet::where('id_user', $request->id_user)
+                ->where('id_transaction', $request->payment_intent_id)
+                ->first();
+            $transaction->id_refund = $refund->id;
+            $transaction->date_refunded = now();
+            $transaction->id_wallet_type = 2;
+            $transaction->save();
 
             // Obtener el saldo actualizado del usuario
-            $totalBalance = Wallet::where('id_user', $request->id_user)->sum('amount');
+            $totalBalance = Wallet::where('id_user', $request->id_user)
+                ->whereNull('date_refunded')
+                ->sum('amount');
 
             return response()->json([
-                'message' => 'Reembolso parcial exitoso',
+                'message' => 'Reembolso de transacción realizado con éxito',
                 'refund' => [
                     'id' => $refund->id,
                     'amount' => $refund->amount / 100,
@@ -164,12 +171,11 @@ class WalletController extends Controller
                 'wallet' => [
                     'id_wallet' => $transaction->id_wallet,
                     'id_user' => $transaction->id_user,
-                    'amount' => $totalBalance
+                    'balance' => $totalBalance
                 ],
                 'transaction' => [
-                    'id_wallet' => $transaction->id_wallet,
-                    'amount' => $transaction->amount,
-                    'id_transaction' => $transaction->id_transaction
+                    'id_refund' => $transaction->id_refund,
+                    'amount' => $transaction->amount
                 ]
             ], 200);
         } catch (Exception $e) {
@@ -201,7 +207,9 @@ class WalletController extends Controller
 
         try {
             // Obtener el saldo del usuario autenticado
-            $availableBalance = Wallet::where('id_user', $user->id_user)->sum('amount');
+            $availableBalance = Wallet::where('id_user', $user->id_user)
+                ->whereNull('date_refunded')
+                ->sum('amount');
 
             if ($availableBalance < $request->amount) {
                 return response()->json(['error' => 'Fondos insuficientes en el monedero'], 400);
@@ -243,7 +251,7 @@ class WalletController extends Controller
                     'payment_method' => $defaultPaymentMethod,
                     'confirm' => true,
                     'capture_method' => 'automatic',
-                    'return_url' => 'https://tusitio.com/confirmacion-reembolso',
+                    'return_url' => '',
                 ]);
             } else {
                 return response()->json(['error' => 'Tipo de pago no compatible para reembolsos'], 400);
@@ -255,11 +263,14 @@ class WalletController extends Controller
                 'description' => 'Reembolso desde saldo',
                 'amount' => -$request->amount,
                 'id_wallet_type' => 3,
-                'id_transaction' => $refundPayment->id
+                'id_transaction' => $refundPayment->id,
+                'id_refund' => $refundPayment->id
             ]);
 
             // Obtener el saldo actualizado
-            $totalBalance = Wallet::where('id_user', $user->id_user)->sum('amount');
+            $totalBalance = Wallet::where('id_user', $user->id_user)
+                ->whereNull('date_refunded')
+                ->sum('amount');
 
             return response()->json([
                 'message' => 'Reembolso desde saldo exitoso',
@@ -301,7 +312,9 @@ class WalletController extends Controller
         }
 
         // Obtener el saldo actualizado del usuario
-        $totalBalance = Wallet::where('id_user', $user->id_user)->sum('amount');
+        $totalBalance = Wallet::where('id_user', $user->id_user)
+            ->whereNull('date_refunded')
+            ->sum('amount');
 
         return response()->json([
             'balance' => $totalBalance
@@ -324,8 +337,8 @@ class WalletController extends Controller
 
         // Obtener todas las transacciones del usuario ordenadas por fecha DESC
         $transactions = Wallet::where('id_user', $user->id_user)
-            ->orderBy('date_create', 'desc')
-            ->get(['id_wallet', 'description', 'amount', 'date_create', 'id_wallet_type', 'id_transaction']);
+            ->orderBy('date_created', 'desc')
+            ->get(['id_wallet', 'description', 'amount', 'date_created', 'id_wallet_type', 'id_transaction']);
 
         return response()->json([
             'user' => [

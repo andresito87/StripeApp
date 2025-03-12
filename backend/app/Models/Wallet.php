@@ -16,11 +16,14 @@ class Wallet extends Model
     protected $fillable = [
         'description',
         'amount',
-        'date_create',
         'status',
         'id_transaction',
         'id_wallet_type',
-        'id_user'
+        'id_user',
+        'id_refund',
+        'date_created',
+        'date_verified',
+        'date_refunded'
     ];
 
     // Relación con el usuario (User)
