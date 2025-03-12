@@ -77,7 +77,7 @@ export const PaymentForm = ({ onPaymentSuccess }) => {
       }
       console.log(user);
       // Enviar al backend el paymentMethod.id para que el servidor gestione la transacción
-      const response = await api.post("/wallet/put", {
+      const response = await api.post("/wallet/push", {
         id_user: user.id_user,
         amount: parseInt(amount),
         payment_method_id: paymentMethod.id,

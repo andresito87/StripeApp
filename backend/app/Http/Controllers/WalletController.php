@@ -20,11 +20,11 @@ use Illuminate\Support\Facades\Auth;
 class WalletController extends Controller
 {
     /**
-     * PUT (PUSH): Recargar saldo en el monedero mediante Stripe
+     * PUSH : Recargar saldo en el monedero mediante Stripe
      * @param \Illuminate\Http\Request $request
      * @return mixed|\Illuminate\Http\JsonResponse
      */
-    public function put(Request $request)
+    public function push(Request $request)
     {
         $request->validate([
             'id_user' => 'required|exists:users,id_user',
@@ -99,7 +99,7 @@ class WalletController extends Controller
 
 
     /**
-     * POP (POP): Retirar saldo y hacer un reembolso de una recarga
+     * CHARGE: Retirar saldo y hacer un reembolso de una recarga
      * @param \Illuminate\Http\Request $request
      * @return mixed|\Illuminate\Http\JsonResponse
      */
@@ -184,7 +184,7 @@ class WalletController extends Controller
 
 
     /**
-     * POP (POP): Retirar saldo y hacer un reembolso directamente del saldo
+     * REFUND: Retirar saldo y hacer un reembolso directamente del saldo
      * @param \Illuminate\Http\Request $request
      * @return mixed|\Illuminate\Http\JsonResponse
      */

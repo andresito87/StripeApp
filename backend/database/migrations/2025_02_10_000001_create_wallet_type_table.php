@@ -18,9 +18,9 @@ return new class extends Migration {
 
         // Insertar los valores PUSH y POP por defecto
         DB::table('wallet_type')->insert([
-            ['id_wallet_type' => 1, 'type_name' => 'PUT'],
-            ['id_wallet_type' => 2, 'type_name' => 'POP_RECHARGUE'],
-            ['id_wallet_type' => 3, 'type_name' => 'POP_BALANCE']
+            ['id_wallet_type' => 1, 'type_name' => 'PUSH'],
+            ['id_wallet_type' => 2, 'type_name' => 'CHARGE'],
+            ['id_wallet_type' => 3, 'type_name' => 'REFUND']
         ]);
     }
 

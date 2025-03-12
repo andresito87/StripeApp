@@ -23,7 +23,7 @@ Route::middleware(['jwt'])->group(function () {
 
     // Rutas para el Wallet
     Route::get('/wallet/balance', [WalletController::class, 'getBalance']);
-    Route::post('/wallet/put', [WalletController::class, 'put']);
+    Route::post('/wallet/push', [WalletController::class, 'push']);
     // Reembolso de una transaccion
     Route::put('/wallet/refund/{payment_intent_id}', [WalletController::class, 'popFromRecharge']);
     // Reembolso de una cantidad
