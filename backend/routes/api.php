@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\WalletController;
 use Illuminate\Support\Facades\Route;
@@ -24,12 +25,15 @@ Route::middleware(['jwt'])->group(function () {
     Route::get('/wallet/balance', [WalletController::class, 'getBalance']);
     Route::post('/wallet/put', [WalletController::class, 'put']);
     // Reembolso de una transaccion
-    Route::post('/wallet/refund/{id}', [WalletController::class, 'popFromRecharge']);
+    Route::put('/wallet/refund/{id}', [WalletController::class, 'popFromRecharge']);
     // Reembolso de una cantidad
-    Route::post('/wallet/refund', [WalletController::class, 'popFromBalance']);
+    Route::patch('/wallet/refund', [WalletController::class, 'popFromBalance']);
     Route::get('/wallet/transactions', [WalletController::class, 'getTransactions']);
 
     // Rutas para habilitar 2FA en la cuenta
     Route::post('/2fa/generate-secret', [TwoFactorController::class, 'generateSecret']);
     Route::post('/2fa/verify-enablement', [TwoFactorController::class, 'verifyEnablement']);
+
+    // Rutas para el webhook de Stripe
+    Route::post('/stripe/webhook', [StripeWebhookController::class, 'handleWebhook']);
 });

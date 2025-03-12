@@ -139,7 +139,7 @@ const Dashboard = () => {
 
   const handleRefund = async (transaction: Transaction) => {
     try {
-      const response = await api.post(
+      const response = await api.put(
         `/wallet/refund/${transaction.id_transaction}`,
         {
           id_user: user?.id_user,

@@ -45,7 +45,7 @@ const RefundForm = ({ onRefundSuccess }) => {
 
     try {
       // Enviar la solicitud de reembolso al backend
-      const response = await api.post("/wallet/refund", {
+      const response = await api.patch("/wallet/refund", {
         id_user: user.id_user,
         amount: parseFloat(amount),
       });
