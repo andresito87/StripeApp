@@ -103,60 +103,56 @@ class WalletController extends Controller
      * @param \Illuminate\Http\Request $request
      * @return mixed|\Illuminate\Http\JsonResponse
      */
-    public function popFromRecharge(Request $request)
+    public function popFromRecharge(Request $request, $payment_intent_id)
     {
         $request->validate([
             'id_user' => 'required|exists:users,id_user',
-            'amount' => 'required|numeric|min:1',
-            'payment_intent_id' => 'required|string'
+            'amount' => 'required|numeric|min:1'
         ]);
+
+        if (empty($payment_intent_id)) {
+            return response()->json(['error' => 'El ID del Payment Intent es requerido'], 400);
+        }
 
         Stripe::setApiKey(env('STRIPE_SECRET_KEY'));
 
         try {
-            // Obtener el saldo actual del usuario sumando todas sus transacciones
-            $availableBalance = Wallet::where('id_user', $request->id_user)
-                ->whereNull('date_refunded')
-                ->sum('amount');
-
-            if ($availableBalance < $request->amount) {
-                return response()->json(['error' => 'Fondos insuficientes'], 409);
+            // Verificar si el PaymentIntent existe en Stripe
+            try {
+                $paymentIntent = PaymentIntent::retrieve($payment_intent_id);
+            } catch (Exception $e) {
+                return response()->json(['error' => 'El PaymentIntent no es válido o no existe'], 404);
             }
 
-            // Obtener la información del PaymentIntent de Stripe
-            $paymentIntent = PaymentIntent::retrieve($request->payment_intent_id);
-            $originalAmount = $paymentIntent->amount / 100; // Convertir de centavos a euros
+            $originalAmount = $paymentIntent->amount / 100; // Convertir de centimos a euros
 
-            if ($request->amount > $originalAmount) {
-                return response()->json(['error' => 'El monto del reembolso no puede ser mayor que la transacción original'], 409);
+            // Verificar si el PaymentIntent existe en la base de datos y pertenece al usuario
+            $transaction = Wallet::where('id_transaction', $payment_intent_id)
+                ->where('id_user', $request->id_user)
+                ->first();
+
+            if (!$transaction) {
+                return response()->json(['error' => 'El PaymentIntent no pertenece al usuario o no existe en la base de datos'], 404);
             }
 
-            // Verificar si ya se han hecho reembolsos parciales previos
-            $existingRefunds = Wallet::where('id_transaction', $request->payment_intent_id)
-                ->where('id_wallet_type', 2) // Solo transacciones POP
-                ->sum('amount'); // Total de dinero ya reembolsado
-
-            $totalRefunded = abs($existingRefunds) + $request->amount;
-
-            if ($totalRefunded > $originalAmount) {
-                return response()->json(['error' => 'La cantidad total reembolsada supera la transacción original'], 400);
+            // Verificar si la cantidad a reembolsar es exactamente igual al original
+            if ($request->amount != $originalAmount) {
+                return response()->json(['error' => 'Solo se permiten reembolsos de la cantidad total de la transacción'], 400);
             }
 
-            // Procesar reembolso parcial en Stripe
+            // Procesar reembolso en Stripe
             $refund = Refund::create([
-                'payment_intent' => $request->payment_intent_id,
-                'amount' => $request->amount * 100, // Convertir a centavos
+                'payment_intent' => $payment_intent_id,
+                'amount' => $request->amount * 100, // Convertir a centimos
             ]);
 
-            $transaction = Wallet::where('id_user', $request->id_user)
-                ->where('id_transaction', $request->payment_intent_id)
-                ->first();
+            // Actualizar transacción en la base de datos
             $transaction->id_refund = $refund->id;
             $transaction->date_refunded = now();
             $transaction->id_wallet_type = 2;
             $transaction->save();
 
-            // Obtener el saldo actualizado del usuario
+            // Obtener el saldo actualizado
             $totalBalance = Wallet::where('id_user', $request->id_user)
                 ->whereNull('date_refunded')
                 ->sum('amount');
@@ -184,6 +180,8 @@ class WalletController extends Controller
             ], 500);
         }
     }
+
+
 
     /**
      * POP (POP): Retirar saldo y hacer un reembolso directamente del saldo
@@ -338,7 +336,7 @@ class WalletController extends Controller
         // Obtener todas las transacciones del usuario ordenadas por fecha DESC
         $transactions = Wallet::where('id_user', $user->id_user)
             ->orderBy('date_created', 'desc')
-            ->get(['id_wallet', 'description', 'amount', 'date_created', 'id_wallet_type', 'id_transaction']);
+            ->get(['id_wallet', 'description', 'amount', 'date_created', 'id_wallet_type', 'id_transaction', 'id_refund', 'date_verified', 'date_refunded']);
 
         return response()->json([
             'user' => [
