@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Models\DisputedTransaction;
 use App\Models\Wallet;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -33,14 +34,56 @@ class ProcessStripeWebhook implements ShouldQueue
             && $event['data']['object']['disputed'] === true
         ) {
             $paymentIntent = $event['data']['object']['payment_intent'] ?? null;
+            $disputeId = $event['data']['object']['dispute'] ?? null; // Suponiendo que el ID de la disputa proviene de `event['data']['object']['id']`
+            $reason = $event['data']['object']['outcome']['reason'] ?? 'Not specified'; // La razón puede ser lo que necesites, puedes ajustarlo
 
-            if ($paymentIntent) {
-                Log::warning('Procesando disputa', ['payment_intent' => $paymentIntent]);
+            if ($paymentIntent && $disputeId) {
 
+                // Actualiza el estado del pago en la tabla 'wallet'
                 Wallet::where('id_transaction', $paymentIntent)
                     ->update(['status' => 'disputed']);
+
+                // Crear una nueva disputa
+                DisputedTransaction::create([
+                    'dispute_id' => $disputeId,
+                    'payment_intent_id' => $paymentIntent,
+                    'reason' => $reason,
+                    'status' => 'pending'
+                ]);
+
             } else {
-                Log::error('No se encontró payment_intent en el evento de disputa.');
+                Log::error('No se encontró payment_intent o dispute_id en el evento de disputa.');
+            }
+        } elseif (
+            isset($event['type'])
+            && $event['type'] === 'charge.dispute.closed'
+            && isset($event['data']['object']['object'])
+            && $event['data']['object']['object'] === 'dispute'
+        ) {
+            $paymentIntent = $event['data']['object']['payment_intent'] ?? null;
+            $disputeId = $event['data']['object']['id'] ?? null;
+            $reason = $event['data']['object']['reason'] ?? 'Not specified';
+            $status = $event['data']['object']['reason'] ?? null;
+
+            if ($paymentIntent && $disputeId) {
+
+                // Finalizar una disputa fraudulenta
+                if ($status == 'fraudulent') {
+                    Wallet::where('id_transaction', $paymentIntent)
+                        ->update(['status' => 'failure']);
+                }
+
+                // Actualizar el estado y razon de la disputa
+                if ($status != null) {
+                    DisputedTransaction::where('dispute_id', $disputeId)
+                        ->update([
+                            'status' => $status,
+                            'reason' => $reason
+                        ]);
+                }
+
+            } else {
+                Log::error('No se encontró payment_intent o dispute_id en el evento de disputa.');
             }
         } elseif (
             isset($event['type'])
@@ -51,13 +94,11 @@ class ProcessStripeWebhook implements ShouldQueue
         ) {
             $paymentIntent = $event['data']['object']['payment_intent'];
 
-            Log::info('Procesando pago exitoso', ['payment_intent' => $paymentIntent]);
-
             Wallet::where('id_transaction', $paymentIntent)
                 ->update(['status' => 'succeeded']);
         } else {
             Log::info('Valor del payment_intent ');
-            Log::info('Evento de Stripe no manejado', ['type' => $event['type'], 'object' => $event['data']['object']]);
+            Log::info('Evento de Stripe no manejado', ['type' => $event['type'], 'event' => $event]);
         }
 
     }
