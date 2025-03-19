@@ -64,7 +64,6 @@ const LogoutButton = styled.button`
 
 export const Navbar = () => {
   const auth = React.useContext(AuthContext);
-  console.log(auth?.user);
   const navigate = useNavigate();
   const handleLogout = () => {
     auth?.logout();

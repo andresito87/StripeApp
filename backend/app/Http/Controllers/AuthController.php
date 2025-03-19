@@ -163,6 +163,7 @@ class AuthController extends Controller
 
             $totalBalance = Wallet::where('id_user', $user->id_user)
                 ->whereNull('date_refunded')
+                ->where('status', 'succeeded')
                 ->sum('amount');
 
             return response()->json([

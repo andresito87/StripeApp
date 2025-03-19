@@ -34,6 +34,9 @@ Route::middleware(['jwt'])->group(function () {
     Route::post('/2fa/generate-secret', [TwoFactorController::class, 'generateSecret']);
     Route::post('/2fa/verify-enablement', [TwoFactorController::class, 'verifyEnablement']);
 
-    // Rutas para el webhook de Stripe
-    Route::post('/stripe/webhook', [StripeWebhookController::class, 'handleWebhook']);
+
+
 });
+// Rutas para el webhook de Stripe
+Route::post('/stripe/webhook', [StripeWebhookController::class, 'handleWebhook'])
+    ->middleware('verify.stripe');

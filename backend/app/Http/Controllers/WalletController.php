@@ -75,6 +75,7 @@ class WalletController extends Controller
             // Obtener el saldo actualizado del usuario
             $saldoTotal = Wallet::where('id_user', $user->id_user)
                 ->whereNull('date_refunded')
+                ->where('status', 'succeeded')
                 ->sum('amount');
 
             return response()->json([
@@ -155,6 +156,7 @@ class WalletController extends Controller
             // Obtener el saldo actualizado
             $totalBalance = Wallet::where('id_user', $request->id_user)
                 ->whereNull('date_refunded')
+                ->where('status', 'succeeded')
                 ->sum('amount');
 
             return response()->json([
@@ -207,6 +209,7 @@ class WalletController extends Controller
             // Obtener el saldo del usuario autenticado
             $availableBalance = Wallet::where('id_user', $user->id_user)
                 ->whereNull('date_refunded')
+                ->where('status', 'succeeded')
                 ->sum('amount');
 
             if ($availableBalance < $request->amount) {
@@ -268,6 +271,7 @@ class WalletController extends Controller
             // Obtener el saldo actualizado
             $totalBalance = Wallet::where('id_user', $user->id_user)
                 ->whereNull('date_refunded')
+                ->where('status', 'succeeded')
                 ->sum('amount');
 
             return response()->json([
@@ -312,6 +316,7 @@ class WalletController extends Controller
         // Obtener el saldo actualizado del usuario
         $totalBalance = Wallet::where('id_user', $user->id_user)
             ->whereNull('date_refunded')
+            ->where('status', 'succeeded')
             ->sum('amount');
 
         return response()->json([

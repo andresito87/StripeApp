@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\JwtMiddleware;
+use App\Http\Middleware\VerifyStripeWebhook;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -21,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 'jwt' => JwtMiddleware::class,
                 'session' => StartSession::class,
                 '2fa' => \PragmaRX\Google2FA\Google2FA::class,
+                'verify.stripe' => VerifyStripeWebhook::class,
             ]
         );
         $middleware->append(StartSession::class);

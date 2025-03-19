@@ -16,7 +16,7 @@ return new class extends Migration {
             $table->string('description', 64);
             $table->float('amount');
             $table->dateTime('date_created')->default(now());
-            $table->string('status', 8)->nullable();
+            $table->string('status', 20)->nullable();
             $table->string('id_transaction', 256)->nullable();
             $table->unsignedBigInteger('id_wallet_type');
             $table->unsignedBigInteger('id_user');
