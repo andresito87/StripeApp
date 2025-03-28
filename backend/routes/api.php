@@ -17,15 +17,22 @@ Route::post('/logout', [AuthController::class, 'logout'])->middleware('jwt');
 Route::post('/2fa/verifyOtp', [TwoFactorController::class, 'verifyOtp']);
 Route::get('/2fa/qr-image', [TwoFactorController::class, 'getQRCode']); // no usado por ahora
 
+// Rutas para el webhook de Stripe
+Route::post('/stripe/webhook', [StripeWebhookController::class, 'handleWebhook'])
+    ->middleware('verify.stripe');
+
 // Rutas protegidas (requieren token final) para gestionar la activación de 2FA en la cuenta
 Route::middleware(['jwt'])->group(function () {
+    // Ruta del usuario logueado
     Route::get('/user', [AuthController::class, 'user']);
 
     // Rutas para el Wallet
     Route::get('/wallet/balance', [WalletController::class, 'getBalance']);
     Route::post('/wallet/push', [WalletController::class, 'push']);
+
     // Reembolso de una transaccion
     Route::put('/wallet/refund/{payment_intent_id}', [WalletController::class, 'popFromRecharge']);
+
     // Reembolso de una cantidad
     Route::patch('/wallet/refund', [WalletController::class, 'popFromBalance']);
     Route::get('/wallet/transactions', [WalletController::class, 'getTransactions']);
@@ -34,9 +41,4 @@ Route::middleware(['jwt'])->group(function () {
     Route::post('/2fa/generate-secret', [TwoFactorController::class, 'generateSecret']);
     Route::post('/2fa/verify-enablement', [TwoFactorController::class, 'verifyEnablement']);
 
-
-
 });
-// Rutas para el webhook de Stripe
-Route::post('/stripe/webhook', [StripeWebhookController::class, 'handleWebhook'])
-    ->middleware('verify.stripe');

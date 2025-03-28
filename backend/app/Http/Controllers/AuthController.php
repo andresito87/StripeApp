@@ -9,7 +9,6 @@ use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use PragmaRX\Google2FA\Google2FA;
 use Stripe\Stripe;
 use Stripe\Customer;
 
@@ -18,12 +17,10 @@ use Stripe\Customer;
  */
 class AuthController extends Controller
 {
-    private $google2fa;
     private $jwt_secret;
 
     public function __construct()
     {
-        $this->google2fa = new Google2FA();
         $this->jwt_secret = env('JWT_SECRET', 'tu_clave_secreta');
     }
 

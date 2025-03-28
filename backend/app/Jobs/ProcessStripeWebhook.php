@@ -12,17 +12,34 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Job para procesar los eventos de webhook de Stripe en segundo plano.
+ *
+ * Esta clase maneja eventos específicos de Stripe, como pagos exitosos y disputas,
+ * actualizando la base de datos en consecuencia.
+ */
 class ProcessStripeWebhook implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    /**
+     * @var array $event El evento de Stripe recibido.
+     */
     protected $event;
 
+    /**
+     * Crea una nueva instancia del job.
+     *
+     * @param array $event Datos del evento recibido desde Stripe.
+     */
     public function __construct($event)
     {
         $this->event = $event;
     }
 
+    /**
+     * Ejecuta el procesamiento del evento de Stripe.
+     */
     public function handle()
     {
         $event = $this->event;
