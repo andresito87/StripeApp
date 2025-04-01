@@ -14,14 +14,24 @@ const StyledInput = styled.input`
   outline: none;
   box-sizing: border-box;
   transition: all 0.3s ease-in-out;
+  background-color: #fff; /* Fondo blanco */
+  color: #000; /* Texto en negro */
 
   &:focus {
     border-color: #007bff;
     box-shadow: 0px 0px 8px 2px rgba(0, 123, 255, 0.5);
+    background-color: #fff; /* Asegurar fondo blanco en foco */
   }
 
   &::placeholder {
     color: #aaa;
+  }
+
+  /* Evitar fondo azul en autofill */
+  &:-webkit-autofill {
+    background-color: #fff !important;
+    box-shadow: 0 0 0px 1000px white inset !important;
+    -webkit-text-fill-color: #000 !important;
   }
 `;
 

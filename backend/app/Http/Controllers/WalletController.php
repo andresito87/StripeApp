@@ -98,7 +98,6 @@ class WalletController extends Controller
         }
     }
 
-
     /**
      * CHARGE: Retirar saldo y hacer un reembolso de una recarga
      * @param \Illuminate\Http\Request $request
@@ -182,8 +181,6 @@ class WalletController extends Controller
             ], 500);
         }
     }
-
-
 
     /**
      * REFUND: Retirar saldo y hacer un reembolso directamente del saldo
@@ -324,7 +321,6 @@ class WalletController extends Controller
         ], 200);
     }
 
-
     /**
      * Obtener el listado de transacciones del usuario
      * @param \Illuminate\Http\Request $request
@@ -340,8 +336,19 @@ class WalletController extends Controller
 
         // Obtener todas las transacciones del usuario ordenadas por fecha DESC
         $transactions = Wallet::where('id_user', $user->id_user)
-            ->orderBy('date_created', 'desc')
-            ->get(['id_wallet', 'description', 'amount', 'date_created', 'id_wallet_type', 'id_transaction', 'id_refund', 'date_verified', 'date_refunded']);
+            ->orderBy('date_created', 'asc')
+            ->paginate(5, [
+                'id_wallet',
+                'description',
+                'amount',
+                'status',
+                'date_created',
+                'id_wallet_type',
+                'id_transaction',
+                'id_refund',
+                'date_verified',
+                'date_refunded'
+            ]);
 
         return response()->json([
             'user' => [
@@ -352,6 +359,5 @@ class WalletController extends Controller
             'transactions' => $transactions
         ], 200);
     }
-
 
 }

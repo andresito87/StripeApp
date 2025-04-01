@@ -71,6 +71,7 @@ const TransactionItem = styled.li`
   padding: 10px;
   border-bottom: 1px solid #e5e7eb;
   color: #374151;
+  min-height: 80px;
 
   &:last-child {
     border-bottom: none;
@@ -85,6 +86,45 @@ const RefundButton = styled(Button)`
   &:hover {
     background-color: #dc2626;
   }
+`;
+
+const PaginationContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: auto;
+  padding: 1rem;
+  width: 100%;
+  position: sticky;
+  bottom: 0;
+  background: white;
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.1);
+`;
+
+const PaginationButton = styled.button`
+  padding: 0.5rem 1rem;
+  border: none;
+  background-color: #3b82f6;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s;
+
+  &:hover {
+    background-color: #2563eb;
+  }
+
+  &:disabled {
+    background-color: #9ca3af;
+    cursor: not-allowed;
+  }
+`;
+
+const PageNumber = styled.span`
+  font-weight: bold;
+  color: #374151;
+  font-size: 1rem;
 `;
 
 /*********************  LÓGICA  *********************/
@@ -107,6 +147,10 @@ const Dashboard = () => {
   const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const location = useLocation();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [nextPageUrl, setNextPageUrl] = useState(null);
+  const [prevPageUrl, setPrevPageUrl] = useState(null);
+  const limit = 10;
 
   const { updateBalance } = useAuth();
 
@@ -122,10 +166,23 @@ const Dashboard = () => {
     }
   };
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = async (page = 1) => {
     try {
-      const response = await api.get("/wallet/transactions");
-      setTransactions(response.data.transactions);
+      const response = await api.get(`/wallet/transactions`, {
+        params: { page, limit },
+      });
+
+      if (
+        response.data.transactions &&
+        Array.isArray(response.data.transactions.data)
+      ) {
+        setTransactions(response.data.transactions.data);
+        setCurrentPage(response.data.transactions.current_page);
+        setNextPageUrl(response.data.transactions.next_page_url);
+        setPrevPageUrl(response.data.transactions.prev_page_url);
+      } else {
+        setTransactions([]);
+      }
     } catch (error) {
       console.error("Error al obtener transacciones:", error);
     }
@@ -134,8 +191,8 @@ const Dashboard = () => {
   // Permite actualizar el balance y el listado de transacciones cuando de monta el componente
   useEffect(() => {
     fetchBalance();
-    fetchTransactions();
-  }, []);
+    fetchTransactions(currentPage);
+  }, [currentPage]);
 
   const handleRefund = async (transaction: Transaction) => {
     try {
@@ -185,6 +242,20 @@ const Dashboard = () => {
     await fetchTransactions();
   };
 
+  const goToNextPage = () => {
+    if (nextPageUrl) {
+      setCurrentPage((prev) => prev + 1);
+      fetchTransactions(currentPage + 1); // Recargar datos
+    }
+  };
+
+  const goToPrevPage = () => {
+    if (prevPageUrl) {
+      setCurrentPage((prev) => prev - 1);
+      fetchTransactions(currentPage - 1); // Recargar datos
+    }
+  };
+
   return (
     <DashboardContainer>
       {/* Barra de navegación */}
@@ -226,27 +297,60 @@ const Dashboard = () => {
           <Title>Historial de Transacciones</Title>
           <TransactionList>
             {transactions.length > 0 ? (
-              transactions.map((transaction) => (
-                <TransactionItem key={transaction.id_wallet}>
-                  <span>
-                    {transaction.description} - {transaction.amount}€ -{" "}
-                    {transaction.date_refunded
-                      ? new Date(transaction.date_refunded).toLocaleString()
-                      : new Date(transaction.date_created).toLocaleString()}
-                  </span>
-                  {!(transaction.id_wallet_type === 1) ? (
-                    <RefundButton disabled>Reembolsado</RefundButton>
-                  ) : (
-                    <RefundButton onClick={() => handleRefund(transaction)}>
-                      Reembolso
-                    </RefundButton>
-                  )}
-                </TransactionItem>
-              ))
+              <>
+                {[
+                  ...transactions,
+                  ...Array(Math.max(0, 5 - transactions.length)).fill(null),
+                ].map((transaction, index) => (
+                  <TransactionItem
+                    key={transaction?.id_wallet || `empty-${index}`}
+                  >
+                    {transaction ? (
+                      <>
+                        <span>
+                          {transaction.description} - {transaction.amount}€ -{" "}
+                          {transaction.date_refunded
+                            ? new Date(
+                                transaction.date_refunded
+                              ).toLocaleString()
+                            : new Date(
+                                transaction.date_created
+                              ).toLocaleString()}
+                        </span>
+                        {transaction.id_wallet_type === 1 &&
+                        transaction.status == "succeeded" ? (
+                          <RefundButton
+                            onClick={() => handleRefund(transaction)}
+                          >
+                            Reembolso
+                          </RefundButton>
+                        ) : (
+                          <RefundButton disabled>Reembolsado</RefundButton>
+                        )}
+                      </>
+                    ) : (
+                      <span style={{ visibility: "hidden" }}>───</span>
+                    )}
+                  </TransactionItem>
+                ))}
+              </>
             ) : (
               <p>No hay transacciones registradas.</p>
             )}
           </TransactionList>
+          {transactions.length > 0 && (
+            <PaginationContainer>
+              <PaginationButton onClick={goToPrevPage} disabled={!prevPageUrl}>
+                Anterior
+              </PaginationButton>
+
+              <PageNumber>Página {currentPage}</PageNumber>
+
+              <PaginationButton onClick={goToNextPage} disabled={!nextPageUrl}>
+                Siguiente
+              </PaginationButton>
+            </PaginationContainer>
+          )}
         </TransactionsContainer>
       )}
     </DashboardContainer>
