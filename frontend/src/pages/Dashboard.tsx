@@ -11,6 +11,8 @@ import RefundForm from "../components/ui/RefundForm";
 import { toast } from "react-toastify";
 import { AxiosError } from "axios";
 import { Navbar } from "../components/ui/Navbar";
+import { TransactionList } from "../components/ui/TransactionList";
+import { Transaction } from "@/types/Transaction";
 
 /*********************  ESTILOS  *********************/
 const DashboardContainer = styled.div`
@@ -56,12 +58,6 @@ const TwoFAContainer = styled(Card)`
 const TransactionsContainer = styled(Card)`
   text-align: left;
   max-width: 500px;
-`;
-
-const TransactionList = styled.ul`
-  list-style: none;
-  padding: 0;
-  margin: 0;
 `;
 
 const TransactionItem = styled.li`
@@ -131,16 +127,6 @@ const PageNumber = styled.span`
 // Inicializamos Stripe
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
-interface Transaction {
-  id_wallet: string;
-  id_transaction: string;
-  description: string;
-  amount: number;
-  date_created: string;
-  date_refunded?: string;
-  id_wallet_type: number;
-}
-
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -192,7 +178,7 @@ const Dashboard = () => {
   useEffect(() => {
     fetchBalance();
     fetchTransactions(currentPage);
-  }, [currentPage]);
+  }, []);
 
   const handleRefund = async (transaction: Transaction) => {
     try {
@@ -293,65 +279,15 @@ const Dashboard = () => {
 
       {/* Bloque de Historial de Transacciones */}
       {location.pathname === "/history" && (
-        <TransactionsContainer>
-          <Title>Historial de Transacciones</Title>
-          <TransactionList>
-            {transactions.length > 0 ? (
-              <>
-                {[
-                  ...transactions,
-                  ...Array(Math.max(0, 5 - transactions.length)).fill(null),
-                ].map((transaction, index) => (
-                  <TransactionItem
-                    key={transaction?.id_wallet || `empty-${index}`}
-                  >
-                    {transaction ? (
-                      <>
-                        <span>
-                          {transaction.description} - {transaction.amount}€ -{" "}
-                          {transaction.date_refunded
-                            ? new Date(
-                                transaction.date_refunded
-                              ).toLocaleString()
-                            : new Date(
-                                transaction.date_created
-                              ).toLocaleString()}
-                        </span>
-                        {transaction.id_wallet_type === 1 &&
-                        transaction.status == "succeeded" ? (
-                          <RefundButton
-                            onClick={() => handleRefund(transaction)}
-                          >
-                            Reembolso
-                          </RefundButton>
-                        ) : (
-                          <RefundButton disabled>Reembolsado</RefundButton>
-                        )}
-                      </>
-                    ) : (
-                      <span style={{ visibility: "hidden" }}>───</span>
-                    )}
-                  </TransactionItem>
-                ))}
-              </>
-            ) : (
-              <p>No hay transacciones registradas.</p>
-            )}
-          </TransactionList>
-          {transactions.length > 0 && (
-            <PaginationContainer>
-              <PaginationButton onClick={goToPrevPage} disabled={!prevPageUrl}>
-                Anterior
-              </PaginationButton>
-
-              <PageNumber>Página {currentPage}</PageNumber>
-
-              <PaginationButton onClick={goToNextPage} disabled={!nextPageUrl}>
-                Siguiente
-              </PaginationButton>
-            </PaginationContainer>
-          )}
-        </TransactionsContainer>
+        <TransactionList
+          transactions={transactions}
+          handleRefund={handleRefund}
+          currentPage={currentPage}
+          goToNextPage={goToNextPage}
+          goToPrevPage={goToPrevPage}
+          nextPageUrl={nextPageUrl}
+          prevPageUrl={prevPageUrl}
+        />
       )}
     </DashboardContainer>
   );

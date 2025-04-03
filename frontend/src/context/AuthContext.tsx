@@ -1,12 +1,5 @@
+import { User } from "@/types/user";
 import { createContext, useContext } from "react";
-
-export interface User {
-  id_user: string;
-  balance: number;
-  name: string;
-  email: string;
-  google2fa_enabled: boolean;
-}
 
 export interface AuthContextType {
   user: User | null;

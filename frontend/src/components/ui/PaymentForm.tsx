@@ -4,7 +4,7 @@ import styled from "styled-components";
 import api from "../../services/api";
 import { Button } from "./Button";
 import { Input } from "./Input";
-import StyledCardElement from "./StyledCardElement";
+import { StyledCardElement } from "./StyledCardElement";
 import { toast } from "react-toastify";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";

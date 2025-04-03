@@ -19,7 +19,7 @@ const StyledCardElementWrapper = styled.div<{ $isFocused: boolean }>`
 
 /*********************  LÓGICA  *********************/
 
-const StyledCardElement = () => {
+export const StyledCardElement = () => {
   const [isFocused, setIsFocused] = useState(false);
 
   return (
@@ -42,5 +42,3 @@ const StyledCardElement = () => {
     </StyledCardElementWrapper>
   );
 };
-
-export default StyledCardElement;
