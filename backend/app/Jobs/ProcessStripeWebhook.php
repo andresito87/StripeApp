@@ -5,7 +5,6 @@ namespace App\Jobs;
 use App\Models\DisputedTransaction;
 use App\Models\Wallet;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -113,8 +112,28 @@ class ProcessStripeWebhook implements ShouldQueue
 
             Wallet::where('id_transaction', $paymentIntent)
                 ->update(['status' => 'succeeded']);
+        } //No se realizan cambios en la BD porque no se estan almacenando las bloqueadas
+        elseif (
+            isset($event['type'])
+            && $event['type'] === 'charge.failed'
+            && isset($event['data']['object']['payment_intent'])
+            && isset($event['data']['object']['outcome'])
+            && $event['data']['object']['outcome']['type'] === 'blocked'
+        ) {
+            $paymentIntent = $event['data']['object']['payment_intent'];
+
+            Wallet::where('id_transaction', $paymentIntent)
+                ->update(['status' => 'blocked']);
+        } elseif (
+            isset($event['type'])
+            && $event['type'] === 'payment_intent.requires_action'
+            && isset($event['data']['object']['id'])
+        ) {
+            $paymentIntent = $event['data']['object']['id'];
+
+            Wallet::where('id_transaction', $paymentIntent)
+                ->update(['status' => 'requires_action']);
         } else {
-            Log::info('Valor del payment_intent ');
             Log::info('Evento de Stripe no manejado', ['type' => $event['type'], 'event' => $event]);
         }
 
