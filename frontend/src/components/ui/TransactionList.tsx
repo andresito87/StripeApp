@@ -1,11 +1,11 @@
 import styled from "styled-components";
-import { Button } from "./Button";
-import { Transaction } from "@/types/Transaction";
+import { Transaction } from "@/types/transaction";
+import { TransactionRow } from "./TransactionRow";
 
 /*********************  ESTILOS  *********************/
 const TransactionsContainer = styled.div`
   text-align: left;
-  max-width: 500px;
+  max-width: 1200px;
   background: white;
   padding: 2rem;
   border-radius: 12px;
@@ -23,6 +23,18 @@ const List = styled.ul`
   list-style: none;
   padding: 0;
   margin: 0;
+  width: 100%;
+`;
+
+const Header = styled.li`
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr; /* Distribuir las columnas: Descripción, Monto, Fecha y Botón */
+  gap: 1rem;
+  padding: 12px;
+  font-weight: bold;
+  color: #1f2937;
+  background-color: #f3f4f6; /* Fondo para la cabecera */
+  border-bottom: 1px solid #e5e7eb;
 `;
 
 const Item = styled.li`
@@ -36,16 +48,6 @@ const Item = styled.li`
 
   &:last-child {
     border-bottom: none;
-  }
-`;
-
-const RefundButton = styled(Button)`
-  font-size: 0.75rem;
-  padding: 0.3rem 0.6rem;
-  background-color: #ef4444;
-  color: white;
-  &:hover {
-    background-color: #dc2626;
   }
 `;
 
@@ -112,34 +114,33 @@ export const TransactionList = ({
   return (
     <TransactionsContainer>
       <Title>Historial de Transacciones</Title>
+      {/* Cabecera de la tabla */}
+      <Header>
+        <span>Importe</span>
+        <span>Estado</span>
+        <span>Motivo</span>
+        <span>Descripción</span>
+        <span>Cliente</span>
+        <span>Fecha Creación</span>
+        <span>Fecha Reembolso</span>
+        <span>Acciones</span>
+      </Header>
       <List>
         {transactions.length > 0 ? (
           [
             ...transactions,
             ...Array(Math.max(0, 5 - transactions.length)).fill(null), // Llena los huecos con null
           ].map((transaction, index) => (
-            <Item key={transaction?.id_wallet || `empty-${index}`}>
+            <div key={transaction ? transaction.id_wallet : `empty-${index}`}>
               {transaction ? (
-                <>
-                  <span>
-                    {transaction.description} - {transaction.amount}€ -{" "}
-                    {transaction.date_refunded
-                      ? new Date(transaction.date_refunded).toLocaleString()
-                      : new Date(transaction.date_created).toLocaleString()}
-                  </span>
-                  {transaction.id_wallet_type === 1 &&
-                  transaction.status === "succeeded" ? (
-                    <RefundButton onClick={() => handleRefund(transaction)}>
-                      Reembolsar
-                    </RefundButton>
-                  ) : (
-                    <RefundButton disabled>Reembolsado</RefundButton>
-                  )}
-                </>
+                <TransactionRow
+                  transaction={transaction}
+                  handleRefund={handleRefund}
+                />
               ) : (
                 <span style={{ visibility: "hidden" }}>───</span>
               )}
-            </Item>
+            </div>
           ))
         ) : (
           <p>No hay transacciones registradas.</p>

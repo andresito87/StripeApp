@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DisputeController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\WalletController;
@@ -41,4 +42,5 @@ Route::middleware(['jwt'])->group(function () {
     Route::post('/2fa/generate-secret', [TwoFactorController::class, 'generateSecret']);
     Route::post('/2fa/verify-enablement', [TwoFactorController::class, 'verifyEnablement']);
 
+    Route::get('/disputes/{payment_intent}', [DisputeController::class, 'getReason']);
 });
