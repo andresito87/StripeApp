@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-
+use App\Models\DisputedTransaction;
 use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
@@ -336,24 +336,25 @@ class WalletController extends Controller
 
         // Validar los filtros opcionales
         $request->validate([
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'creation_date' => 'nullable|date',
+            'refunded_date' => 'nullable|date',
             'min_amount' => 'nullable|numeric',
             'max_amount' => 'nullable|numeric|gte:min_amount',
             'id_wallet_type' => 'nullable|integer',
             'description' => 'nullable|string',
-            'email' => 'nullable|string',
-            'status' => 'nullable|string|in:succeeded,disputed,failure,refunded', // ajusta según tus estados reales
+            'reason' => 'nullable|string',
+            'status' => 'nullable|string|in:succeeded,disputed,failure,refunded',
         ]);
 
         // Construir la consulta con filtros dinámicos
         $query = Wallet::where('id_user', $user->id_user);
 
-        if ($request->filled('start_date') && $request->filled('end_date')) {
-            $query->whereBetween('date_created', [
-                $request->input('start_date'),
-                $request->input('end_date')
-            ]);
+        if ($request->filled('creation_date')) {
+            $query->whereDate('date_created', $request->input('creation_date'));
+        }
+
+        if ($request->filled('refunded_date')) {
+            $query->whereDate('date_refunded', $request->input('refunded_date'));
         }
 
         if ($request->filled('min_amount')) {
@@ -380,21 +381,37 @@ class WalletController extends Controller
             $query->where('description', 'like', '%' . $request->input('description') . '%');
         }
 
-        // Paginación y orden
+        if ($request->filled('reason')) {
+            // Buscar transacciones con disputa que coincidan con el reason
+            $disputedIds = DisputedTransaction::where('reason', 'like', '%' . $request->input('reason') . '%')
+                ->pluck('payment_intent_id');
+
+            $query->whereIn('id_transaction', $disputedIds);
+        }
+
+        // Cargar también los datos de la disputa relacionada si existe
         $transactions = $query
+            ->with('dispute')
             ->orderBy('date_created', 'asc')
             ->paginate(5, [
-                'id_wallet',
+                'id_wallet', // lo uso como key del map() para recorrer la lista en el front
                 'description',
                 'amount',
                 'status',
                 'date_created',
                 'id_wallet_type',
-                'id_transaction',
-                'id_refund',
+                'id_transaction', // lo utilizo para localizar la disputa asociada este pago
+                'id_refund', // lo utilizo para comprobar si ha sido reembolsado
                 'date_verified',
                 'date_refunded'
             ]);
+
+        // Transformar resultados para incluir 'reason' si existe disputa
+        $transactions->getCollection()->transform(function ($transaction) {
+            $transactionArray = $transaction->toArray();
+            $transactionArray['reason'] = optional($transaction->dispute)->reason;
+            return $transactionArray;
+        });
 
         return response()->json([
             'user' => [

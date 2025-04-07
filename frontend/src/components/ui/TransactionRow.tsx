@@ -2,25 +2,24 @@ import styled from "styled-components";
 import { Button } from "./Button";
 import { Transaction } from "@/types/transaction";
 import { useAuth } from "../../context/AuthContext";
-import { useEffect, useState } from "react";
-import api from "../../services/api";
 
 /*********************  ESTILOS  *********************/
 
 // Componente para cada fila de la transacción
 const TransactionItem = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr; /* Distribuir las columnas: Descripción, Monto, Fecha y Botón */
-  gap: 1rem;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+  gap: 3rem;
   align-items: center;
   padding: 12px;
   border-bottom: 1px solid #e5e7eb;
   color: #374151;
   background-color: #fafafa;
   transition: background-color 0.3s;
+  min-width: 1000px;
 
   &:hover {
-    background-color: #f3f4f6; /* Efecto hover para la fila */
+    background-color: #f3f4f6;
   }
 
   &:last-child {
@@ -31,37 +30,44 @@ const TransactionItem = styled.div`
 const Description = styled.span`
   font-size: 1rem;
   color: #374151;
+  min-with: 5rem;
 `;
 
 const Status = styled.span`
   font-size: 1rem;
   color: #374151;
+  min-with: 5rem;
 `;
 
 const Reason = styled.span`
   font-size: 1rem;
   color: #374151;
+  min-with: 5rem;
 `;
 
 const Client = styled.span`
   font-size: 1rem;
   color: #374151;
+  min-with: 5rem;
 `;
 
 const Amount = styled.span`
   font-size: 1rem;
   font-weight: bold;
-  color: #16a34a; /* Verde para los montos positivos */
+  color: #16a34a;
+  min-with: 5rem;
 `;
 
 const CreationDate = styled.span`
   font-size: 0.875rem;
-  color: #6b7280; /* Gris suave */
+  color: #6b7280;
+  min-with: 5rem;
 `;
 
 const CreationRefunded = styled.span`
   font-size: 0.875rem;
-  color: #6b7280; /* Gris suave */
+  color: #6b7280;
+  min-with: 5rem;
 `;
 
 const RefundButton = styled(Button)`
@@ -103,38 +109,18 @@ export const TransactionRow = ({
   transaction,
   handleRefund,
 }: TransactionRowProps) => {
-  const [reason, setReason] = useState("");
   const { user } = useAuth();
-  useEffect(() => {
-    const getReason = async () => {
-      if (
-        transaction.status === "disputed" ||
-        transaction.status === "failure"
-      ) {
-        try {
-          const response = await api.get(
-            `/disputes/${transaction.id_transaction}`
-          );
-          setReason(response.data.reason);
-        } catch (error) {
-          console.error("Error obteniendo la razón de disputa:", error);
-        }
-      }
-    };
-
-    getReason();
-  }, []);
 
   return (
     <TransactionItem>
       <Amount>{transaction.amount}€</Amount>
       <Status>{transaction.status}</Status>
-      <Reason>{reason ?? ""}</Reason>
+      <Reason>{transaction.reason ?? ""}</Reason>
       <Description>{transaction.description}</Description>
       <Client>{user?.email}</Client>
       <CreationDate>{formatDate(transaction.date_created)}</CreationDate>
       <CreationRefunded>
-        {transaction.date_refunded ? formatDate(transaction.date_created) : ""}
+        {transaction.date_refunded ? formatDate(transaction.date_refunded) : ""}
       </CreationRefunded>
       <div>
         {transaction.id_wallet_type === 1 &&

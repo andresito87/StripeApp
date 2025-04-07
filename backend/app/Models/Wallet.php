@@ -37,4 +37,10 @@ class Wallet extends Model
     {
         return $this->belongsTo(WalletType::class, 'id_wallet_type', 'id_wallet_type');
     }
+
+    // Relación con la tabla disputed_transactions
+    public function dispute()
+    {
+        return $this->hasOne(DisputedTransaction::class, 'payment_intent_id', 'id_transaction');
+    }
 }

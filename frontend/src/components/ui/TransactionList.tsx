@@ -20,6 +20,12 @@ const Title = styled.h2`
   margin-bottom: 1rem;
 `;
 
+const ListWrapper = styled.div`
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch; /* Mejora el desplazamiento en dispositivos táctiles */
+  width: 100%;
+`;
+
 const List = styled.ul`
   list-style: none;
   padding: 0;
@@ -29,27 +35,14 @@ const List = styled.ul`
 
 const Header = styled.li`
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr; /* Distribuir las columnas: Descripción, Monto, Fecha y Botón */
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
   gap: 1rem;
   padding: 12px;
   font-weight: bold;
   color: #1f2937;
-  background-color: #f3f4f6; /* Fondo para la cabecera */
+  background-color: #f3f4f6;
   border-bottom: 1px solid #e5e7eb;
-`;
-
-const Item = styled.li`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px;
-  border-bottom: 1px solid #e5e7eb;
-  color: #374151;
-  min-height: 80px;
-
-  &:last-child {
-    border-bottom: none;
-  }
+  min-width: 1000px;
 `;
 
 /*********************  ESTILOS DE PAGINACIÓN  *********************/
@@ -115,38 +108,40 @@ export const TransactionList = ({
   return (
     <TransactionsContainer>
       <Title>Historial de Transacciones</Title>
-      {/* Cabecera de la tabla */}
-      <Header>
-        <span>Importe</span>
-        <span>Estado</span>
-        <span>Motivo</span>
-        <span>Descripción</span>
-        <span>Cliente</span>
-        <span>Fecha Creación</span>
-        <span>Fecha Reembolso</span>
-        <span>Acciones</span>
-      </Header>
-      <List>
-        {transactions.length > 0 ? (
-          [
-            ...transactions,
-            ...Array(Math.max(0, 5 - transactions.length)).fill(null), // Llena los huecos con null
-          ].map((transaction, index) => (
-            <div key={transaction ? transaction.id_wallet : `empty-${index}`}>
-              {transaction ? (
-                <TransactionRow
-                  transaction={transaction}
-                  handleRefund={handleRefund}
-                />
-              ) : (
-                <span style={{ visibility: "hidden" }}>───</span>
-              )}
-            </div>
-          ))
-        ) : (
-          <p>No hay transacciones registradas.</p>
-        )}
-      </List>
+      <ListWrapper>
+        {/* Cabecera de la tabla */}
+        <Header>
+          <span>Importe</span>
+          <span>Estado</span>
+          <span>Motivo</span>
+          <span>Descripción</span>
+          <span>Cliente</span>
+          <span>Fecha Creación</span>
+          <span>Fecha Reembolso</span>
+          <span>Acciones</span>
+        </Header>
+        <List>
+          {transactions.length > 0 ? (
+            [
+              ...transactions,
+              ...Array(Math.max(0, 5 - transactions.length)).fill(null), // Llena los huecos con null
+            ].map((transaction, index) => (
+              <div key={transaction ? transaction.id_wallet : `empty-${index}`}>
+                {transaction ? (
+                  <TransactionRow
+                    transaction={transaction}
+                    handleRefund={handleRefund}
+                  />
+                ) : (
+                  <span style={{ visibility: "hidden" }}>───</span>
+                )}
+              </div>
+            ))
+          ) : (
+            <p>No hay transacciones registradas.</p>
+          )}
+        </List>
+      </ListWrapper>
 
       {transactions.length > 0 && (
         <PaginationContainer>
