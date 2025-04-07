@@ -13,6 +13,7 @@ import { AxiosError } from "axios";
 import { Navbar } from "../components/ui/Navbar";
 import { TransactionList } from "../components/ui/TransactionList";
 import { Transaction } from "@/types/transaction";
+import TransactionFilters from "../components/ui/TransactionsFilter";
 
 /*********************  ESTILOS  *********************/
 const DashboardContainer = styled.div`
@@ -61,6 +62,7 @@ const Dashboard = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [nextPageUrl, setNextPageUrl] = useState(null);
   const [prevPageUrl, setPrevPageUrl] = useState(null);
+  const [filters, setFilters] = useState({});
   const limit = 10;
 
   const { updateBalance } = useAuth();
@@ -77,10 +79,10 @@ const Dashboard = () => {
     }
   };
 
-  const fetchTransactions = async (page = 1) => {
+  const fetchTransactions = async (page = 1, filters = {}) => {
     try {
       const response = await api.get(`/wallet/transactions`, {
-        params: { page, limit },
+        params: { page, limit, ...filters },
       });
 
       if (
@@ -102,8 +104,14 @@ const Dashboard = () => {
   // Permite actualizar el balance y el listado de transacciones cuando de monta el componente
   useEffect(() => {
     fetchBalance();
-    fetchTransactions(currentPage);
-  }, []);
+    fetchTransactions(currentPage, filters);
+  }, [filters, currentPage]);
+
+  // Función para manejar el cambio de filtros
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
+    setCurrentPage(1); // resetear a la primera página al cambiar filtros
+  };
 
   const handleRefund = async (transaction: Transaction) => {
     try {
@@ -204,15 +212,19 @@ const Dashboard = () => {
 
       {/* Bloque de Historial de Transacciones */}
       {location.pathname === "/history" && (
-        <TransactionList
-          transactions={transactions}
-          handleRefund={handleRefund}
-          currentPage={currentPage}
-          goToNextPage={goToNextPage}
-          goToPrevPage={goToPrevPage}
-          nextPageUrl={nextPageUrl}
-          prevPageUrl={prevPageUrl}
-        />
+        <>
+          {/* Filtros de transacciones */}
+          <TransactionFilters onFilterChange={handleFilterChange} />
+          <TransactionList
+            transactions={transactions}
+            handleRefund={handleRefund}
+            currentPage={currentPage}
+            goToNextPage={goToNextPage}
+            goToPrevPage={goToPrevPage}
+            nextPageUrl={nextPageUrl}
+            prevPageUrl={prevPageUrl}
+          />
+        </>
       )}
     </DashboardContainer>
   );

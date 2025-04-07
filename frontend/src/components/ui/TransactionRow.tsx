@@ -115,7 +115,6 @@ export const TransactionRow = ({
           const response = await api.get(
             `/disputes/${transaction.id_transaction}`
           );
-          console.log(response.data);
           setReason(response.data.reason);
         } catch (error) {
           console.error("Error obteniendo la razón de disputa:", error);

@@ -328,14 +328,60 @@ class WalletController extends Controller
      */
     public function getTransactions(Request $request)
     {
-        $user = $request->user(); // Obtener usuario autenticado
+        $user = $request->user();
 
         if (!$user) {
             return response()->json(['error' => 'Usuario no encontrado'], 404);
         }
 
-        // Obtener todas las transacciones del usuario ordenadas por fecha DESC
-        $transactions = Wallet::where('id_user', $user->id_user)
+        // Validar los filtros opcionales
+        $request->validate([
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'min_amount' => 'nullable|numeric',
+            'max_amount' => 'nullable|numeric|gte:min_amount',
+            'id_wallet_type' => 'nullable|integer',
+            'description' => 'nullable|string',
+            'email' => 'nullable|string',
+            'status' => 'nullable|string|in:succeeded,disputed,failure,refunded', // ajusta según tus estados reales
+        ]);
+
+        // Construir la consulta con filtros dinámicos
+        $query = Wallet::where('id_user', $user->id_user);
+
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $query->whereBetween('date_created', [
+                $request->input('start_date'),
+                $request->input('end_date')
+            ]);
+        }
+
+        if ($request->filled('min_amount')) {
+            $query->where('amount', '>=', $request->input('min_amount'));
+        }
+
+        if ($request->filled('max_amount')) {
+            $query->where('amount', '<=', $request->input('max_amount'));
+        }
+
+        if ($request->filled('id_wallet_type')) {
+            $query->where('id_wallet_type', $request->input('id_wallet_type'));
+        }
+
+        if ($request->filled('status')) {
+            if ($request->input('status') === 'refunded') {
+                $query->whereNotNull('id_refund');
+            } else {
+                $query->where('status', $request->input('status'));
+            }
+        }
+
+        if ($request->filled('description')) {
+            $query->where('description', 'like', '%' . $request->input('description') . '%');
+        }
+
+        // Paginación y orden
+        $transactions = $query
             ->orderBy('date_created', 'asc')
             ->paginate(5, [
                 'id_wallet',
@@ -358,6 +404,7 @@ class WalletController extends Controller
             ],
             'transactions' => $transactions
         ], 200);
+
     }
 
 }

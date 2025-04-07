@@ -1,7 +1,7 @@
 import axios from "axios";
 import { redirectTo } from "./NavigationService";
 
-const API_URL = "http://127.0.0.1:8000/api";
+const API_URL = import.meta.env.VITE_API_URL;
 
 // Obtener el token desde localStorage
 const getToken = () => localStorage.getItem("token");

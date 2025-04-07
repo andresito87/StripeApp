@@ -7,7 +7,7 @@ const TransactionsContainer = styled.div`
   text-align: left;
   max-width: 1200px;
   background: white;
-  padding: 2rem;
+  padding: 1rem;
   border-radius: 12px;
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
   width: 100%;
@@ -16,6 +16,7 @@ const TransactionsContainer = styled.div`
 const Title = styled.h2`
   font-size: 1.8rem;
   color: #1f2937;
+  margin-top: 0rem;
   margin-bottom: 1rem;
 `;
 
