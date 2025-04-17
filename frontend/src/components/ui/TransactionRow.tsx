@@ -111,6 +111,7 @@ export const TransactionRow = ({
 }: TransactionRowProps) => {
   const { user } = useAuth();
 
+  console.log(transaction.reason);
   return (
     <TransactionItem>
       <Amount>{transaction.amount}€</Amount>
@@ -124,12 +125,12 @@ export const TransactionRow = ({
       </CreationRefunded>
       <div>
         {transaction.id_wallet_type === 1 &&
-        transaction.status === "succeeded" ? (
+        transaction.id_wallet_type_error === 1 ? (
           <RefundButton onClick={() => handleRefund(transaction)}>
             Reembolsar
           </RefundButton>
         ) : (
-          <RefundButton disabled>Reembolsado</RefundButton>
+          <></>
         )}
       </div>
     </TransactionItem>

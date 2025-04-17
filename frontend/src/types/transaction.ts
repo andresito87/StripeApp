@@ -8,5 +8,6 @@ export interface Transaction {
   date_created: string;
   date_refunded?: string;
   id_wallet_type: number;
+  id_wallet_type_error: number;
   status: string;
 }
