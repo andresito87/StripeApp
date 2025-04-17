@@ -392,6 +392,7 @@ class WalletController extends Controller
         // Cargar también los datos de la disputa relacionada si existe
         $transactions = $query
             ->with('dispute')
+            ->with('walletTypeError')
             ->orderBy('date_created', 'asc')
             ->paginate(5, [
                 'id_wallet', // lo uso como key del map() para recorrer la lista en el front
@@ -400,6 +401,7 @@ class WalletController extends Controller
                 'status',
                 'date_created',
                 'id_wallet_type',
+                'id_wallet_type_error',
                 'id_transaction', // lo utilizo para localizar la disputa asociada este pago
                 'id_refund', // lo utilizo para comprobar si ha sido reembolsado
                 'date_verified',
@@ -410,6 +412,7 @@ class WalletController extends Controller
         $transactions->getCollection()->transform(function ($transaction) {
             $transactionArray = $transaction->toArray();
             $transactionArray['reason'] = optional($transaction->dispute)->reason;
+            $transactionArray['status'] = optional($transaction->walletTypeError)->description;
             return $transactionArray;
         });
 

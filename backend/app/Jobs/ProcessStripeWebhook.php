@@ -55,9 +55,12 @@ class ProcessStripeWebhook implements ShouldQueue
 
             if ($paymentIntent && $disputeId) {
 
-                // Actualiza el estado del pago en la tabla 'wallet'
+                // Actualiza que es una disputa
                 Wallet::where('id_transaction', $paymentIntent)
-                    ->update(['status' => 'disputed']);
+                    ->update([
+                        'status' => 'disputed',
+                        'id_wallet_type_error' => 3,
+                    ]);
 
                 // Crear una nueva disputa
                 DisputedTransaction::create([
@@ -86,7 +89,10 @@ class ProcessStripeWebhook implements ShouldQueue
                 // Finalizar una disputa fraudulenta
                 if ($status == 'fraudulent') {
                     Wallet::where('id_transaction', $paymentIntent)
-                        ->update(['status' => 'failure']);
+                        ->update([
+                            'status' => 'failure',
+                            'id_wallet_type_error' => 2,
+                        ]);
                 }
 
                 // Actualizar el estado y razon de la disputa
@@ -111,7 +117,12 @@ class ProcessStripeWebhook implements ShouldQueue
             $paymentIntent = $event['data']['object']['payment_intent'];
 
             Wallet::where('id_transaction', $paymentIntent)
-                ->update(['status' => 'succeeded']);
+                ->update(
+                    [
+                        'status' => 'succeeded',
+                        'id_wallet_type_error' => 1,
+                    ]
+                );
         } //No se realizan cambios en la BD porque no se estan almacenando las bloqueadas
         elseif (
             isset($event['type'])
@@ -123,7 +134,10 @@ class ProcessStripeWebhook implements ShouldQueue
             $paymentIntent = $event['data']['object']['payment_intent'];
 
             Wallet::where('id_transaction', $paymentIntent)
-                ->update(['status' => 'blocked']);
+                ->update([
+                    'status' => 'blocked',
+                    'id_wallet_type_error' => 5,
+                ]);
         } elseif (
             isset($event['type'])
             && $event['type'] === 'payment_intent.requires_action'

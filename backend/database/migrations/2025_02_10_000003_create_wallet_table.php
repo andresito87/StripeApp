@@ -20,10 +20,12 @@ return new class extends Migration {
             $table->string('id_transaction', 256)->nullable();
             $table->unsignedBigInteger('id_wallet_type');
             $table->unsignedBigInteger('id_user');
+            $table->unsignedBigInteger('id_wallet_type_error')->nullable();
 
             // Índices y claves foráneas
             $table->foreign('id_user')->references('id_user')->on('users')->onDelete('cascade');
             $table->foreign('id_wallet_type')->references('id_wallet_type')->on('wallet_type')->onDelete('cascade');
+            $table->foreign('id_wallet_type_error')->references('id_wallet_type_error')->on('wallet_type_error')->onDelete('set null');
         });
 
         DB::statement("ALTER TABLE wallet AUTO_INCREMENT = 15;");

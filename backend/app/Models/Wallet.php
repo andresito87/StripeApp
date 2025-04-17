@@ -17,6 +17,7 @@ class Wallet extends Model
         'description',
         'amount',
         'status',
+        'id_type_error',
         'id_transaction',
         'id_wallet_type',
         'id_user',
@@ -42,5 +43,11 @@ class Wallet extends Model
     public function dispute()
     {
         return $this->hasOne(DisputedTransaction::class, 'payment_intent_id', 'id_transaction');
+    }
+
+    // Relación con la tabla wallet_type_error
+    public function walletTypeError()
+    {
+        return $this->belongsTo(WalletTypeError::class, 'id_wallet_type_error', 'id_wallet_type_error');
     }
 }
