@@ -35,14 +35,14 @@ const List = styled.ul`
 
 const Header = styled.li`
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+  grid-template-columns: 60px 120px 80px 120px 210px 130px 150px 20px;
   gap: 1rem;
   padding: 12px;
   font-weight: bold;
   color: #1f2937;
   background-color: #f3f4f6;
   border-bottom: 1px solid #e5e7eb;
-  min-width: 1000px;
+  min-width: 1150px;
 `;
 
 /*********************  ESTILOS DE PAGINACIÓN  *********************/

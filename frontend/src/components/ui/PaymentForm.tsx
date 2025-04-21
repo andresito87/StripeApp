@@ -49,21 +49,19 @@ export const PaymentForm = ({ onPaymentSuccess }) => {
     setLoading(true);
 
     try {
-      // Obtener el elemento CardElement
       const cardElement = elements.getElement(CardElement);
 
-      // Verificar si CardElement está presente
       if (!cardElement) {
         toast.error("El elemento Stripe de tarjeta no está disponible");
         setLoading(false);
         return;
       }
 
-      // Crear el método de pago en Stripe
+      // Crear método de pago
       const { error: pmError, paymentMethod } =
         await stripe.createPaymentMethod({
           type: "card",
-          card: cardElement, // me aseguro de que no es null
+          card: cardElement,
           billing_details: {
             email: user.email,
             name: user.name,
@@ -76,61 +74,68 @@ export const PaymentForm = ({ onPaymentSuccess }) => {
         return;
       }
 
-      // Enviar al backend el paymentMethod.id para que el servidor gestione la transacción
-      const response = await api.post("/wallet/push", {
+      // Primer intento de pago
+      let response = await api.post("/wallet/push", {
         id_user: user.id_user,
         amount: parseInt(amount),
         payment_method_id: paymentMethod.id,
       });
 
-      if (response.status === 200) {
-        toast.success(response.data.message);
-        setAmount("");
+      let data = response.data;
 
-        // Limpiar el CardElement
-        const cardElement = elements.getElement(CardElement);
-        if (cardElement) {
-          cardElement.clear();
+      // Si requiere autenticación (3D Secure)
+      if (data.requires_action) {
+        const { error: confirmError, paymentIntent } =
+          await stripe.handleCardAction(data.payment_intent_client_secret);
+
+        if (confirmError) {
+          toast.error(`Autenticación fallida: ${confirmError.message}`);
+          setLoading(false);
+          return;
         }
 
-        // Notificar al Dashboard que la operación fue exitosa
-        if (onPaymentSuccess) {
-          onPaymentSuccess();
+        // Confirmar intento en el servidor
+        response = await api.post("/wallet/push", {
+          id_user: user.id_user,
+          amount: parseInt(amount), // Reenviamos el monto por seguridad (opcional)
+          payment_intent_id: paymentIntent.id,
+        });
+
+        data = response.data;
+
+        if (data.error) {
+          throw new Error(data.error);
         }
-      } else {
-        throw new Error(response.data.error || "Error en la transacción");
+      }
+
+      // Si todo fue bien
+      toast.success(data.message || "Recarga completada con éxito");
+      setAmount("");
+
+      const cardElementClear = elements.getElement(CardElement);
+      if (cardElementClear) {
+        cardElementClear.clear();
+      }
+
+      if (onPaymentSuccess) {
+        onPaymentSuccess();
       }
     } catch (error) {
-      // Aseguramos que el error sea un AxiosError
       if (axios.isAxiosError(error)) {
-        // Si el error tiene una respuesta, mostrar el mensaje de error de la respuesta
         if (error.response) {
-          // Error con respuesta del servidor (4xx, 5xx)
-          toast.error(
-            `${
-              error.response.data?.error ||
-              error.response.statusText ||
-              "Error en la transacción"
-            }`
-          );
+          toast.error(error.response.data?.error || "Error en la transacción");
           console.error("Error en la transacción:", error.response);
         } else if (error.request) {
-          // Error de red: no se recibió respuesta
           toast.error(
             "No se recibió respuesta del servidor. Intenta más tarde."
           );
           console.error("No se recibió respuesta:", error.request);
         } else {
-          // Error relacionado con la configuración de la solicitud
           toast.error(`Error en la solicitud: ${error.message}`);
-          console.error(
-            "Error en la configuración de la solicitud:",
-            error.message
-          );
+          console.error("Error en la solicitud:", error.message);
         }
       } else {
-        // Si el error no es un AxiosError, lo manejamos genéricamente
-        toast.error(`Error desconocido`);
+        toast.error("Error desconocido");
         console.error("Error desconocido:", error);
       }
     } finally {

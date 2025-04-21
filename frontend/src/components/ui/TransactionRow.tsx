@@ -8,7 +8,7 @@ import { useAuth } from "../../context/AuthContext";
 // Componente para cada fila de la transacción
 const TransactionItem = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+  grid-template-columns: 30px 80px 55px 90px 170px 100px 100px 20px;
   gap: 3rem;
   align-items: center;
   padding: 12px;
@@ -16,7 +16,7 @@ const TransactionItem = styled.div`
   color: #374151;
   background-color: #fafafa;
   transition: background-color 0.3s;
-  min-width: 1000px;
+  min-width: 1150px;
 
   &:hover {
     background-color: #f3f4f6;
@@ -27,47 +27,40 @@ const TransactionItem = styled.div`
   }
 `;
 
+const Amount = styled.span`
+  font-size: 1rem;
+  font-weight: bold;
+  color: #16a34a;
+`;
+
 const Description = styled.span`
   font-size: 1rem;
   color: #374151;
-  min-with: 5rem;
 `;
 
 const Status = styled.span`
   font-size: 1rem;
   color: #374151;
-  min-with: 5rem;
 `;
 
 const Reason = styled.span`
   font-size: 1rem;
   color: #374151;
-  min-with: 5rem;
 `;
 
 const Client = styled.span`
   font-size: 1rem;
   color: #374151;
-  min-with: 5rem;
-`;
-
-const Amount = styled.span`
-  font-size: 1rem;
-  font-weight: bold;
-  color: #16a34a;
-  min-with: 5rem;
 `;
 
 const CreationDate = styled.span`
   font-size: 0.875rem;
   color: #6b7280;
-  min-with: 5rem;
 `;
 
 const CreationRefunded = styled.span`
   font-size: 0.875rem;
   color: #6b7280;
-  min-with: 5rem;
 `;
 
 const RefundButton = styled(Button)`

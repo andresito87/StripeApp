@@ -29,7 +29,8 @@ class WalletController extends Controller
         $request->validate([
             'id_user' => 'required|exists:users,id_user',
             'amount' => 'required|numeric|min:1',
-            'payment_method_id' => 'required|string'
+            'payment_method_id' => 'required_without:payment_intent_id|string|nullable',
+            'payment_intent_id' => 'required_without:payment_method_id|string|nullable'
         ]);
 
         Stripe::setApiKey(env('STRIPE_SECRET_KEY'));
@@ -40,61 +41,72 @@ class WalletController extends Controller
                 return response()->json(['error' => 'El usuario no tiene cuenta en Stripe'], 400);
             }
 
-            // Asociar el método de pago al cliente en Stripe
-            PaymentMethod::retrieve($request->payment_method_id)
-                ->attach(['customer' => $user->stripe_customer_id]);
+            if ($request->filled('payment_method_id')) {
+                // Asociar método de pago si no lo está
+                PaymentMethod::retrieve($request->payment_method_id)
+                    ->attach(['customer' => $user->stripe_customer_id]);
 
-            // Establecer el método de pago como predeterminado (opcional)
-            Customer::update($user->stripe_customer_id, [
-                'invoice_settings' => [
-                    'default_payment_method' => $request->payment_method_id
-                ]
-            ]);
+                // Crear un nuevo PaymentIntent
+                $paymentIntent = PaymentIntent::create([
+                    'amount' => $request->amount * 100,
+                    'currency' => 'eur',
+                    'customer' => $user->stripe_customer_id,
+                    'payment_method' => $request->payment_method_id,
+                    'confirmation_method' => 'manual',
+                    'confirm' => true,
+                    'use_stripe_sdk' => true,
+                    'payment_method_types' => ['card'],
+                ]);
 
-            // Crear PaymentIntent en Stripe
-            $paymentIntent = PaymentIntent::create([
-                'amount' => $request->amount * 100, // Convertir a centavos
-                'currency' => 'eur',
-                'customer' => $user->stripe_customer_id,
-                'payment_method' => $request->payment_method_id,
-                'confirm' => true, // Confirma automáticamente el pago
-                'payment_method_types' => ['card']
-            ]);
+            } else {
+                // Confirmar PaymentIntent existente
+                $paymentIntent = PaymentIntent::retrieve($request->payment_intent_id);
+                $paymentIntent->confirm();
+            }
 
-            // Registrar la transacción en la base de datos (PUSH)
-            $transaction = Wallet::create([
-                'id_user' => $request->id_user,
-                'description' => 'Recarga de saldo',
-                'amount' => $request->amount,
-                'id_wallet_type' => 1, // 1 = Recarga (PUSH)
-                'id_transaction' => $paymentIntent->id,
-                'date_created' => now(),
-                'date_verified' => now()
-            ]);
+            // Manejar estados
+            if ($paymentIntent->status === 'requires_action') {
+                return response()->json([
+                    'requires_action' => true,
+                    'payment_intent_client_secret' => $paymentIntent->client_secret
+                ]);
+            } elseif ($paymentIntent->status === 'succeeded') {
+                // Registrar la transacción en base de datos
+                $transaction = Wallet::create([
+                    'id_user' => $request->id_user,
+                    'description' => 'Recarga de saldo',
+                    'amount' => $request->amount,
+                    'id_wallet_type' => 1,
+                    'id_transaction' => $paymentIntent->id,
+                    'date_created' => now(),
+                    'date_verified' => now(),
+                    'status' => 'succeeded'
+                ]);
 
-            // Obtener el saldo actualizado del usuario
-            $saldoTotal = Wallet::where('id_user', $user->id_user)
-                ->whereNull('date_refunded')
-                ->where('status', 'succeeded')
-                ->sum('amount');
+                $saldoTotal = Wallet::where('id_user', $user->id_user)
+                    ->whereNull('date_refunded')
+                    ->where('status', 'succeeded')
+                    ->sum('amount');
 
-            return response()->json([
-                'message' => 'Saldo añadido con éxito',
-                'wallet' => [
-                    'id_wallet' => $transaction->id_wallet,
-                    'id_user' => $transaction->id_user,
-                    'amount' => $saldoTotal
-                ],
-                'transaction' => [
-                    'id_wallet' => $transaction->id_wallet,
-                    'amount' => $transaction->amount,
-                    'id_transaction' => $transaction->id_transaction
-                ]
-            ], 200);
+                return response()->json([
+                    'message' => 'Saldo añadido con éxito',
+                    'wallet' => [
+                        'id_wallet' => $transaction->id_wallet,
+                        'id_user' => $transaction->id_user,
+                        'amount' => $saldoTotal
+                    ],
+                    'transaction' => [
+                        'id_wallet' => $transaction->id_wallet,
+                        'amount' => $transaction->amount,
+                        'id_transaction' => $transaction->id_transaction
+                    ]
+                ], 200);
+            } else {
+                return response()->json(['error' => 'Estado inesperado de PaymentIntent'], 400);
+            }
+
         } catch (Exception $e) {
-            return response()->json([
-                'error' => 'Error en la transacción: ' . $e->getMessage()
-            ], 500);
+            return response()->json(['error' => 'Error en la transacción: ' . $e->getMessage()], 500);
         }
     }
 
