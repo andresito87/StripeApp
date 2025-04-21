@@ -76,6 +76,7 @@ export const Navbar = () => {
         <StyledLink to="/dashboard">Dashboard</StyledLink>
         <StyledLink to="/refund">Reembolsos</StyledLink>
         <StyledLink to="/history">Historial de Transacciones</StyledLink>
+        <StyledLink to="/charts">Gráficos</StyledLink>
       </LinksContainer>
       <UserInfo>
         <Username>{auth?.user?.name}</Username>

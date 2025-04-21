@@ -43,4 +43,7 @@ Route::middleware(['jwt'])->group(function () {
     Route::post('/2fa/verify-enablement', [TwoFactorController::class, 'verifyEnablement']);
 
     Route::get('/disputes/{payment_intent}', [DisputeController::class, 'getReason']);
+
+    Route::get('/wallet/transactions-types', [WalletController::class, 'getTransactionsByType']);
+
 });

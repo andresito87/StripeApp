@@ -14,6 +14,7 @@ import { Navbar } from "../components/ui/Navbar";
 import { TransactionList } from "../components/ui/TransactionList";
 import { Transaction } from "@/types/transaction";
 import TransactionFilters from "../components/ui/TransactionsFilter";
+import ChartsDashboard from "../components/charts/ChartsDashboard";
 
 /*********************  ESTILOS  *********************/
 const DashboardContainer = styled.div`
@@ -224,6 +225,14 @@ const Dashboard = () => {
             nextPageUrl={nextPageUrl}
             prevPageUrl={prevPageUrl}
           />
+        </>
+      )}
+
+      {/* Bloque de Gráficos */}
+      {location.pathname === "/charts" && (
+        <>
+          {/* Filtros de transacciones */}
+          <ChartsDashboard />
         </>
       )}
     </DashboardContainer>

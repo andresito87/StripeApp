@@ -99,6 +99,15 @@ function App() {
             }
           />
 
+          <Route
+            path="/charts"
+            element={
+              <PrivateRoute>
+                <Dashboard />
+              </PrivateRoute>
+            }
+          />
+
           {/* Redirigir cualquier ruta desconocida al dashboard si está autenticado, o al login si no */}
           <Route path="*" element={<Navigate to="/dashboard" />} />
         </Routes>

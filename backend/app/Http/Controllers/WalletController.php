@@ -439,4 +439,76 @@ class WalletController extends Controller
 
     }
 
+    /**
+     * Obtener el listado de transacciones del usuario
+     * @param \Illuminate\Http\Request $request
+     * @return mixed|\Illuminate\Http\JsonResponse
+     */
+    public function getTransactionsByType(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json(['error' => 'Usuario no encontrado'], 404);
+        }
+
+        // Cargar transacciones con relaciones
+        $transactions = Wallet::where('id_user', $user->id_user)
+            ->get();
+
+        // Inicializar resumen
+        $summary = [
+            'succeeded' => 0,
+            'failed' => 0,
+            'disputed' => 0,
+            'requires_action' => 0,
+            'blocked' => 0
+        ];
+
+        // Clasificar y transformar
+        $transactions->map(function ($transaction) use (&$summary) {
+            $typeId = optional($transaction->walletTypeError)->id_wallet_type_error;
+
+            switch ($typeId) {
+                case 1:
+                    $summary['succeeded']++;
+                    break;
+                case 2:
+                    $summary['failed']++;
+                    break;
+                case 3:
+                    $summary['disputed']++;
+                    break;
+                case 4:
+                    $summary['requires_action']++;
+                    break;
+                default:
+                    $summary['blocked']++;
+            }
+
+            return [
+                'id_wallet' => $transaction->id_wallet
+            ];
+        });
+
+        // Convertir el resumen a formato para gráfico
+        $summaryData = [
+            ['id' => 'Éxito', 'label' => 'Éxito', 'value' => $summary['succeeded']],
+            ['id' => 'Fallido', 'label' => 'Fallido', 'value' => $summary['failed']],
+            ['id' => 'En disputa', 'label' => 'En disputa', 'value' => $summary['disputed']],
+            ['id' => 'Acción requerida', 'label' => 'Acción requerida', 'value' => $summary['requires_action']],
+            ['id' => 'Bloqueado', 'label' => 'Bloqueado', 'value' => $summary['blocked']],
+        ];
+
+        return response()->json([
+            'user' => [
+                'id_user' => $user->id_user,
+                'name' => $user->name,
+                'email' => $user->email
+            ],
+            'summary' => $summaryData
+        ], 200);
+    }
+
+
 }
