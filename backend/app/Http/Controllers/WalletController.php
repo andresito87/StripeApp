@@ -444,7 +444,7 @@ class WalletController extends Controller
      * @param \Illuminate\Http\Request $request
      * @return mixed|\Illuminate\Http\JsonResponse
      */
-    public function getTransactionsByType(Request $request)
+    public function getGraphicsData(Request $request)
     {
         $user = $request->user();
 
@@ -457,7 +457,7 @@ class WalletController extends Controller
             ->get();
 
         // Inicializar resumen
-        $summary = [
+        $resumen_tipo_transacciones = [
             'succeeded' => 0,
             'failed' => 0,
             'disputed' => 0,
@@ -466,24 +466,24 @@ class WalletController extends Controller
         ];
 
         // Clasificar y transformar
-        $transactions->map(function ($transaction) use (&$summary) {
+        $transactions->map(function ($transaction) use (&$resumen_tipo_transacciones) {
             $typeId = optional($transaction->walletTypeError)->id_wallet_type_error;
 
             switch ($typeId) {
                 case 1:
-                    $summary['succeeded']++;
+                    $resumen_tipo_transacciones['succeeded']++;
                     break;
                 case 2:
-                    $summary['failed']++;
+                    $resumen_tipo_transacciones['failed']++;
                     break;
                 case 3:
-                    $summary['disputed']++;
+                    $resumen_tipo_transacciones['disputed']++;
                     break;
                 case 4:
-                    $summary['requires_action']++;
+                    $resumen_tipo_transacciones['requires_action']++;
                     break;
                 default:
-                    $summary['blocked']++;
+                    $resumen_tipo_transacciones['blocked']++;
             }
 
             return [
@@ -492,12 +492,12 @@ class WalletController extends Controller
         });
 
         // Convertir el resumen a formato para gráfico
-        $summaryData = [
-            ['id' => 'Éxito', 'label' => 'Éxito', 'value' => $summary['succeeded']],
-            ['id' => 'Fallido', 'label' => 'Fallido', 'value' => $summary['failed']],
-            ['id' => 'En disputa', 'label' => 'En disputa', 'value' => $summary['disputed']],
-            ['id' => 'Acción requerida', 'label' => 'Acción requerida', 'value' => $summary['requires_action']],
-            ['id' => 'Bloqueado', 'label' => 'Bloqueado', 'value' => $summary['blocked']],
+        $resumen_data_tipos = [
+            ['id' => 'Éxito', 'label' => 'Éxito', 'value' => $resumen_tipo_transacciones['succeeded']],
+            ['id' => 'Fallido', 'label' => 'Fallido', 'value' => $resumen_tipo_transacciones['failed']],
+            ['id' => 'En disputa', 'label' => 'En disputa', 'value' => $resumen_tipo_transacciones['disputed']],
+            ['id' => 'Acción requerida', 'label' => 'Acción requerida', 'value' => $resumen_tipo_transacciones['requires_action']],
+            ['id' => 'Bloqueado', 'label' => 'Bloqueado', 'value' => $resumen_tipo_transacciones['blocked']],
         ];
 
         return response()->json([
@@ -506,7 +506,7 @@ class WalletController extends Controller
                 'name' => $user->name,
                 'email' => $user->email
             ],
-            'summary' => $summaryData
+            'resumen_tipo_transacciones' => $resumen_data_tipos
         ], 200);
     }
 

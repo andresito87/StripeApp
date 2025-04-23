@@ -42,8 +42,7 @@ Route::middleware(['jwt'])->group(function () {
     Route::post('/2fa/generate-secret', [TwoFactorController::class, 'generateSecret']);
     Route::post('/2fa/verify-enablement', [TwoFactorController::class, 'verifyEnablement']);
 
-    Route::get('/disputes/{payment_intent}', [DisputeController::class, 'getReason']);
-
-    Route::get('/wallet/transactions-types', [WalletController::class, 'getTransactionsByType']);
+    // Ruta para obtener los datos de los gráficos
+    Route::get('/wallet/graphics-data', [WalletController::class, 'getGraphicsData']);
 
 });
