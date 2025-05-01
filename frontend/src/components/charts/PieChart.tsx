@@ -1,4 +1,40 @@
 import { ResponsivePie } from "@nivo/pie";
+import styled from "styled-components";
+
+const ChartContainer = styled.div`
+  height: 500px;
+  max-width: 700px;
+  margin: 0 auto;
+`;
+
+const Message = styled.p`
+  padding-top: 200px;
+  text-align: center;
+  color: #6b7280;
+`;
+
+const Title = styled.h2`
+  text-align: center;
+  margin-bottom: 1rem;
+`;
+
+const LegendContainer = styled.div`
+  text-align: center;
+`;
+
+const LegendItem = styled.div`
+  display: inline-block;
+  margin: 0 10px;
+`;
+
+const LegendColor = styled.span`
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  background-color: ${(props) => props.color};
+  border-radius: 50%;
+  margin-right: 5px;
+`;
 
 const PieChart = ({ data }) => {
   const hasData = data && data.length > 0;
@@ -17,21 +53,15 @@ const PieChart = ({ data }) => {
   }));
 
   return (
-    <div style={{ height: "500px", maxWidth: "700px", margin: "0 auto" }}>
+    <ChartContainer>
       {!hasData ? (
-        <p
-          style={{ paddingTop: "200px", textAlign: "center", color: "#6b7280" }}
-        >
-          No hay datos disponibles para mostrar.
-        </p>
+        <Message>No hay datos disponibles para mostrar.</Message>
       ) : (
         <>
-          <h2 style={{ textAlign: "center", marginBottom: "1rem" }}>
-            Total de transacciones
-          </h2>
+          <Title>Total de transacciones</Title>
           <ResponsivePie
             data={coloredData}
-            margin={{ top: 40, right: 20, bottom: 80, left: 20 }}
+            margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
             innerRadius={0.5}
             padAngle={0.5}
             cornerRadius={2}
@@ -46,29 +76,17 @@ const PieChart = ({ data }) => {
             arcLabelsSkipAngle={5}
             arcLabelsTextColor={{ from: "color", modifiers: [["darker", 2]] }}
           />
-          <div style={{ textAlign: "center", marginTop: "1.5rem" }}>
+          <LegendContainer>
             {Object.entries(colorMapping).map(([key, color]) => (
-              <div
-                key={key}
-                style={{ display: "inline-block", margin: "0 10px" }}
-              >
-                <span
-                  style={{
-                    display: "inline-block",
-                    width: "12px",
-                    height: "12px",
-                    backgroundColor: color,
-                    borderRadius: "50%",
-                    marginRight: "5px",
-                  }}
-                ></span>
+              <LegendItem key={key}>
+                <LegendColor color={color}></LegendColor>
                 {key}
-              </div>
+              </LegendItem>
             ))}
-          </div>
+          </LegendContainer>
         </>
       )}
-    </div>
+    </ChartContainer>
   );
 };
 

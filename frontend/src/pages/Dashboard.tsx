@@ -22,7 +22,7 @@ const DashboardContainer = styled.div`
   flex-direction: column; /* Forzar columna */
   align-items: center;
   gap: 2rem;
-  padding: 2rem;
+  padding: 4rem 1.5rem;
   background-color: #f9fafb;
   min-height: 100vh;
   width: 100%;

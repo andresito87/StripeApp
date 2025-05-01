@@ -27,7 +27,7 @@ const BarChart = ({ data }) => {
             data={data}
             keys={["exitosas", "fallidas"]}
             indexBy="mes"
-            margin={{ top: 50, right: 130, bottom: 100, left: 60 }}
+            margin={{ top: 20, right: 20, bottom: 60, left: 50 }}
             padding={0.3}
             valueScale={{ type: "linear" }}
             indexScale={{ type: "band", round: true }}
