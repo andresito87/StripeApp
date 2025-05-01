@@ -1,7 +1,39 @@
 import { ResponsiveBar } from "@nivo/bar";
+import styled from "styled-components";
+
+const LegendContainer = styled.div`
+  text-align: center;
+`;
+
+const LegendItem = styled.div`
+  display: inline-block;
+  margin: 0 10px;
+`;
+
+const LegendColor = styled.span`
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  background-color: ${(props) => props.color};
+  border-radius: 50%;
+  margin-right: 5px;
+`;
 
 const BarChart = ({ data }) => {
   const hasData = data && data.length > 0;
+
+  const colorMapping = {
+    Éxito: "#10B981",
+    Fallido: "#EF4444",
+    "En disputa": "#FBBF24",
+    "Acción requerida": "#6366F1",
+    Bloqueado: "#D1D5DB",
+  };
+
+  const coloredData = data.map((item) => ({
+    ...item,
+    color: colorMapping[item.id] || "#3B82F6",
+  }));
 
   return (
     <div
@@ -23,15 +55,23 @@ const BarChart = ({ data }) => {
           <h2 style={{ textAlign: "center", marginBottom: "1rem" }}>
             Total de transacciones por meses
           </h2>
+          <LegendContainer>
+            {Object.entries(colorMapping).map(([key, color]) => (
+              <LegendItem key={key}>
+                <LegendColor color={color}></LegendColor>
+                {key}
+              </LegendItem>
+            ))}
+          </LegendContainer>
           <ResponsiveBar
             data={data}
-            keys={["exitosas", "fallidas"]}
+            keys={["exitosas", "disputadas"]}
             indexBy="mes"
             margin={{ top: 20, right: 20, bottom: 60, left: 50 }}
             padding={0.3}
             valueScale={{ type: "linear" }}
             indexScale={{ type: "band", round: true }}
-            colors={({ id }) => (id === "exitosas" ? "#32a852" : "#ed4545")}
+            colors={({ id }) => (id === "exitosas" ? "#10B981" : "#FBBF24")}
             defs={[
               {
                 id: "dots",

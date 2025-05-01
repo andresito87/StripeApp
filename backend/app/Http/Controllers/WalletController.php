@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\DisputedTransaction;
 use App\Models\User;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use App\Models\Wallet;
@@ -453,7 +454,8 @@ class WalletController extends Controller
         }
 
         // Cargar transacciones con relaciones
-        $transactions = Wallet::where('id_user', $user->id_user)
+        $transactions = Wallet::with('walletTypeError')
+            ->where('id_user', $user->id_user)
             ->get();
 
         // Inicializar resumen
@@ -465,19 +467,25 @@ class WalletController extends Controller
             'blocked' => 0
         ];
 
-        // Clasificar y transformar
-        $transactions->map(function ($transaction) use (&$resumen_tipo_transacciones) {
+        // Para agrupar por mes
+        $succeededPerMonth = [];
+        $dsiputedPerMonth = [];
+
+        $transactions->each(function ($transaction) use (&$resumen_tipo_transacciones, &$succeededPerMonth, &$dsiputedPerMonth) {
             $typeId = optional($transaction->walletTypeError)->id_wallet_type_error;
+            $mes = Carbon::parse($transaction->created_at)->month;
 
             switch ($typeId) {
                 case 1:
                     $resumen_tipo_transacciones['succeeded']++;
+                    $succeededPerMonth[$mes] = ($succeededPerMonth[$mes] ?? 0) + 1;
                     break;
                 case 2:
                     $resumen_tipo_transacciones['failed']++;
                     break;
                 case 3:
                     $resumen_tipo_transacciones['disputed']++;
+                    $dsiputedPerMonth[$mes] = ($dsiputedPerMonth[$mes] ?? 0) + 1;
                     break;
                 case 4:
                     $resumen_tipo_transacciones['requires_action']++;
@@ -485,11 +493,35 @@ class WalletController extends Controller
                 default:
                     $resumen_tipo_transacciones['blocked']++;
             }
-
-            return [
-                'id_wallet' => $transaction->id_wallet
-            ];
         });
+
+
+        // Nombres de los meses en español
+        $meses = [
+            1 => 'Enero',
+            2 => 'Febrero',
+            3 => 'Marzo',
+            4 => 'Abril',
+            5 => 'Mayo',
+            6 => 'Junio',
+            7 => 'Julio',
+            8 => 'Agosto',
+            9 => 'Septiembre',
+            10 => 'Octubre',
+            11 => 'Noviembre',
+            12 => 'Diciembre'
+        ];
+
+        $transaccionesMensuales = [];
+
+        // Construir el array final con todos los meses
+        for ($i = 1; $i <= 12; $i++) {
+            $transaccionesMensuales[] = [
+                'mes' => $meses[$i],
+                'exitosas' => $succeededPerMonth[$i] ?? 0,
+                'disputadas' => $dsiputedPerMonth[$i] ?? 0
+            ];
+        }
 
         // Convertir el resumen a formato para gráfico
         $resumen_data_tipos = [
@@ -506,7 +538,8 @@ class WalletController extends Controller
                 'name' => $user->name,
                 'email' => $user->email
             ],
-            'resumen_tipo_transacciones' => $resumen_data_tipos
+            'resumen_tipo_transacciones' => $resumen_data_tipos,
+            'transacciones_mensuales' => $transaccionesMensuales
         ], 200);
     }
 

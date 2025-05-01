@@ -25,7 +25,8 @@ const LoadingText = styled.p`
 `;
 
 const ChartsDashboard = () => {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [dataPieChart, setDataPieChart] = useState<Transaction[]>([]);
+  const [dataBarChart, setDataBarChart] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -42,12 +43,20 @@ const ChartsDashboard = () => {
         response.data.resumen_tipo_transacciones &&
         Array.isArray(response.data.resumen_tipo_transacciones)
       ) {
-        setTransactions(response.data.resumen_tipo_transacciones);
+        setDataPieChart(response.data.resumen_tipo_transacciones);
       } else {
-        setTransactions([]);
+        setDataPieChart([]);
       }
 
       // obtengo el resumen de transacciones por meses
+      if (
+        response.data.transacciones_mensuales &&
+        Array.isArray(response.data.transacciones_mensuales)
+      ) {
+        setDataBarChart(response.data.transacciones_mensuales);
+      } else {
+        setDataBarChart([]);
+      }
     } catch (error) {
       console.error("Error al obtener transacciones:", error);
     } finally {
@@ -61,23 +70,8 @@ const ChartsDashboard = () => {
         <LoadingText>Cargando gráficos...</LoadingText>
       ) : (
         <>
-          <PieChart data={transactions} />
-          <BarChart
-            data={[
-              { mes: "Enero", exitosas: 150, fallidas: 20 },
-              { mes: "Febrero", exitosas: 130, fallidas: 35 },
-              { mes: "Marzo", exitosas: 160, fallidas: 25 },
-              { mes: "Abril", exitosas: 140, fallidas: 30 },
-              { mes: "Mayo", exitosas: 180, fallidas: 15 },
-              { mes: "Junio", exitosas: 170, fallidas: 22 },
-              { mes: "Julio", exitosas: 155, fallidas: 28 },
-              { mes: "Agosto", exitosas: 165, fallidas: 18 },
-              { mes: "Septiembre", exitosas: 175, fallidas: 27 },
-              { mes: "Octubre", exitosas: 160, fallidas: 24 },
-              { mes: "Noviembre", exitosas: 150, fallidas: 30 },
-              { mes: "Diciembre", exitosas: 200, fallidas: 20 },
-            ]}
-          />
+          <PieChart data={dataPieChart} />
+          <BarChart data={dataBarChart} />
           <StreamChart
             data={[
               {

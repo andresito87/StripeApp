@@ -8,7 +8,7 @@ import { useAuth } from "../../context/AuthContext";
 // Componente para cada fila de la transacción
 const TransactionItem = styled.div`
   display: grid;
-  grid-template-columns: 30px 80px 55px 90px 170px 100px 100px 20px;
+  grid-template-columns: 30px 80px 120px 90px 170px 100px 100px 20px;
   gap: 3rem;
   align-items: center;
   padding: 12px;

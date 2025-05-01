@@ -35,7 +35,7 @@ const List = styled.ul`
 
 const Header = styled.li`
   display: grid;
-  grid-template-columns: 60px 120px 80px 120px 210px 130px 150px 20px;
+  grid-template-columns: 60px 120px 145px 120px 210px 130px 150px 20px;
   gap: 1rem;
   padding: 12px;
   font-weight: bold;
