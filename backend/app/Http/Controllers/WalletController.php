@@ -543,5 +543,100 @@ class WalletController extends Controller
         ], 200);
     }
 
+    /**
+     * REFUND: Retirar saldo y hacer un reembolso directamente a
+     * la cuenta bancaria proporcionada
+     * @param \Illuminate\Http\Request $request
+     * @return mixed|\Illuminate\Http\JsonResponse
+     */
+    public function popFromBankAccount(Request $request)
+    {
+        $request->validate([
+            'amount' => 'required|numeric|min:1',
+            'payment_method_id' => 'required|string',
+        ]);
 
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(['error' => 'Usuario no autenticado'], 401);
+        }
+
+        Stripe::setApiKey(env('STRIPE_SECRET_KEY'));
+
+        try {
+            $availableBalance = Wallet::where('id_user', $user->id_user)
+                ->whereNull('date_refunded')
+                ->where('status', 'succeeded')
+                ->sum('amount');
+
+            if ($availableBalance < $request->amount) {
+                return response()->json(['error' => 'Fondos insuficientes en el monedero'], 400);
+            }
+
+            if (!$user->stripe_customer_id) {
+                return response()->json(['error' => 'El usuario no tiene cuenta en Stripe'], 400);
+            }
+
+            PaymentMethod::retrieve($request->payment_method_id)->attach([
+                'customer' => $user->stripe_customer_id
+            ]);
+
+            $paymentIntent = PaymentIntent::create([
+                'amount' => $request->amount * 100,
+                'currency' => 'eur',
+                'customer' => $user->stripe_customer_id,
+                'payment_method' => $request->payment_method_id,
+                'confirm' => true,
+                'payment_method_types' => ['sepa_debit'],
+                'mandate_data' => [
+                    'customer_acceptance' => [
+                        'type' => 'online',
+                        'online' => [
+                            'ip_address' => $request->ip(),
+                            'user_agent' => $request->userAgent(),
+                        ],
+                    ],
+                ],
+            ]);
+
+            $transaction = Wallet::create([
+                'id_user' => $user->id_user,
+                'description' => 'Reembolso a cuenta bancaria',
+                'amount' => -$request->amount,
+                'id_wallet_type' => 3,
+                'id_transaction' => $paymentIntent->id,
+                'id_refund' => $paymentIntent->id
+            ]);
+
+            $totalBalance = Wallet::where('id_user', $user->id_user)
+                ->whereNull('date_refunded')
+                ->where('status', 'succeeded')
+                ->sum('amount');
+
+            return response()->json([
+                'message' => 'Reembolso exitoso a cuenta bancaria',
+                'refund' => [
+                    'id' => $paymentIntent->id,
+                    'amount' => $paymentIntent->amount / 100,
+                    'status' => $paymentIntent->status
+                ],
+                'wallet' => [
+                    'id_wallet' => $transaction->id_wallet,
+                    'id_user' => $transaction->id_user,
+                    'amount' => $totalBalance
+                ],
+                'transaction' => [
+                    'id_wallet' => $transaction->id_wallet,
+                    'amount' => $transaction->amount,
+                    'id_transaction' => $transaction->id_transaction
+                ]
+            ], 200);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'error' => 'Error en el reembolso a cuenta bancaria: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

@@ -7,6 +7,7 @@ import { Button } from "./Button";
 import { Input } from "./Input";
 import { toast } from "react-toastify";
 import axios from "axios";
+import { useStripe, useElements, IbanElement } from "@stripe/react-stripe-js";
 
 /*********************  ESTILOS  *********************/
 const RefundContainer = styled.div`
@@ -28,73 +29,80 @@ const Title = styled.h2`
   margin-bottom: 1rem;
 `;
 
-/*********************  LÓGICA  *********************/
+const StripeElementWrapper = styled.div`
+  width: 100%;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 0.5rem;
+  background-color: #f9fafb;
+  font-size: 1rem;
 
+  .StripeElement {
+    width: 100%;
+  }
+`;
+
+/*********************  LÓGICA  *********************/
 const RefundForm = ({ onRefundSuccess }) => {
   const [amount, setAmount] = useState("");
+  const [bankName, setBankName] = useState("");
   const [loading, setLoading] = useState(false);
-  const { user } = useAuth(); // Obtener usuario autenticado
+  const { user } = useAuth();
+
+  const stripe = useStripe();
+  const elements = useElements();
 
   const handleRefund = async () => {
-    if (!user) {
-      toast.error("Usuario no autenticado.");
+    if (!user || !stripe || !elements) {
+      toast.error("Stripe o usuario no disponible");
       return;
     }
+
+    const ibanElement = elements.getElement(IbanElement);
 
     setLoading(true);
 
     try {
-      // Enviar la solicitud de reembolso al backend
-      const response = await api.patch("/wallet/refund", {
-        id_user: user.id_user,
-        amount: parseFloat(amount),
+      if (!ibanElement) {
+        toast.error("Por favor, introduce un IBAN válido.");
+        setLoading(false);
+        return;
+      }
+
+      const { error, paymentMethod } = await stripe.createPaymentMethod({
+        type: "sepa_debit",
+        sepa_debit: ibanElement,
+        billing_details: {
+          name: user.name,
+          email: user.email,
+        },
       });
 
-      if (response.data.refund.status === "succeeded") {
-        toast.success(
-          response.data.message || "Reembolso solicitado con éxito"
-        );
-        setAmount("");
+      if (error) {
+        toast.error(`Error creando método de pago: ${error.message}`);
+        setLoading(false);
+        return;
+      }
 
-        // Notificar al Dashboard que la operación fue exitosa
-        if (onRefundSuccess) {
-          onRefundSuccess();
-        }
+      const response = await api.patch("/wallet/refundToBankAccount", {
+        id_user: user.id_user,
+        amount: parseFloat(amount),
+        payment_method_id: paymentMethod.id,
+        bank_name: bankName,
+      });
+
+      if (response.data.refund.status === "processing") {
+        toast.success("Reembolso solicitado con éxito");
+        setAmount("");
+        setBankName("");
+        ibanElement?.clear();
+        if (onRefundSuccess) onRefundSuccess();
       } else {
         throw new Error(response.data.error || "Error en el reembolso");
       }
     } catch (error) {
-      // Verificar si es un error de respuesta (responde con 4xx o 5xx)
-      if (axios.isAxiosError(error)) {
-        if (error.response) {
-          // Error con respuesta del servidor (4xx, 5xx)
-          toast.error(
-            `Error en el reembolso: ${
-              error.response.data?.error ||
-              error.response.statusText ||
-              "Error desconocido"
-            }`
-          );
-          console.error("Error en el reembolso - Respuesta:", error.response);
-        } else if (error.request) {
-          // Error de red: no se recibió respuesta del servidor
-          toast.error(
-            "No se recibió respuesta del servidor. Intenta más tarde."
-          );
-          console.error("Error en el reembolso - Solicitud:", error.request);
-        } else {
-          // Error relacionado con la configuración de la solicitud
-          toast.error(`Error de configuración: ${error.message}`);
-          console.error(
-            "Error en el reembolso - Configuración:",
-            error.message
-          );
-        }
-      } else {
-        // Si el error no es un AxiosError, se trata de un error desconocido
-        toast.error("Error desconocido");
-        console.error("Error en el reembolso - Desconocido:", error);
-      }
+      toast.error("Error procesando el reembolso");
     } finally {
       setLoading(false);
     }
@@ -106,11 +114,37 @@ const RefundForm = ({ onRefundSuccess }) => {
 
       <Input
         type="number"
-        placeholder="Ingrese la cantidad a reembolsar (€)"
+        placeholder="Cantidad (€)"
         value={amount}
         onChange={(e) => setAmount(e.target.value)}
-        required
+        required={true}
       />
+      <Input
+        type="text"
+        placeholder="Nombre del banco"
+        value={bankName}
+        onChange={(e) => setBankName(e.target.value)}
+        required={true}
+      />
+
+      <StripeElementWrapper>
+        <IbanElement
+          options={{
+            supportedCountries: ["SEPA"],
+            placeholderCountry: "ES",
+            style: {
+              base: {
+                fontSize: "16px",
+                color: "#1f2937",
+                "::placeholder": { color: "#a0aec0" },
+              },
+              invalid: {
+                color: "#e53e3e",
+              },
+            },
+          }}
+        />
+      </StripeElementWrapper>
 
       <Button onClick={handleRefund} disabled={loading}>
         {loading ? "Procesando..." : "Solicitar Reembolso"}
@@ -118,10 +152,4 @@ const RefundForm = ({ onRefundSuccess }) => {
     </RefundContainer>
   );
 };
-
-// Validación de props, tipos de datos
-RefundForm.propTypes = {
-  onRefundSuccess: PropTypes.func,
-};
-
 export default RefundForm;

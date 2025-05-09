@@ -36,6 +36,7 @@ Route::middleware(['jwt'])->group(function () {
 
     // Reembolso de una cantidad
     Route::patch('/wallet/refund', [WalletController::class, 'popFromBalance']);
+    Route::patch('/wallet/refundToBankAccount', [WalletController::class, 'popFromBankAccount']);
     Route::get('/wallet/transactions', [WalletController::class, 'getTransactions']);
 
     // Rutas para habilitar 2FA en la cuenta

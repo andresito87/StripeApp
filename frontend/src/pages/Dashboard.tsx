@@ -206,9 +206,11 @@ const Dashboard = () => {
 
       {/* Nuevo Bloque de Reembolso desde Saldo */}
       {location.pathname === "/refund" && (
-        <Card>
-          <RefundForm onRefundSuccess={handleRefundSuccess} />
-        </Card>
+        <Elements stripe={stripePromise}>
+          <Card>
+            <RefundForm onRefundSuccess={handleRefundSuccess} />
+          </Card>
+        </Elements>
       )}
 
       {/* Bloque de Historial de Transacciones */}

@@ -97,7 +97,7 @@ export const PaymentForm = ({ onPaymentSuccess }) => {
         // Confirmar intento en el servidor
         response = await api.post("/wallet/push", {
           id_user: user.id_user,
-          amount: parseInt(amount), // Reenviamos el monto por seguridad (opcional)
+          amount: parseInt(amount), // Reenviamos la cantidad por seguridad
           payment_intent_id: paymentIntent.id,
         });
 
@@ -121,6 +121,7 @@ export const PaymentForm = ({ onPaymentSuccess }) => {
         onPaymentSuccess();
       }
     } catch (error) {
+      // Si hubo algún error
       if (axios.isAxiosError(error)) {
         if (error.response) {
           toast.error(error.response.data?.error || "Error en la transacción");
@@ -156,7 +157,7 @@ export const PaymentForm = ({ onPaymentSuccess }) => {
         required
       />
 
-      {/* Elemento de la tarjeta de Stripe estilizado para capturar los datos de pago */}
+      {/* Componente de Stripe estilizado para capturar los datos de pago */}
       <StyledCardElement />
       <Button
         onClick={handleMicropayment}
