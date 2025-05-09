@@ -61,7 +61,7 @@ const PieChart = ({ data }) => {
           <Title>Total de transacciones</Title>
           <ResponsivePie
             data={coloredData}
-            margin={{ top: 20, right: 90, bottom: 20, left: 90 }}
+            margin={{ top: 20, right: 110, bottom: 20, left: 110 }}
             innerRadius={0.5}
             padAngle={0.5}
             cornerRadius={2}

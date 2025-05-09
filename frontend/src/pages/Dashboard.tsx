@@ -73,8 +73,8 @@ const Dashboard = () => {
     try {
       const response = await api.get("/wallet/balance");
       const newBalance = response.data.balance;
-      setBalance(newBalance); // Actualizamos el balance localmente
-      updateBalance(newBalance); // También actualizamos el contexto si es necesario
+      setBalance(newBalance);
+      updateBalance(newBalance);
     } catch (error) {
       console.error("Error al obtener el saldo:", error);
     }

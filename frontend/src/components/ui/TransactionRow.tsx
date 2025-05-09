@@ -27,10 +27,10 @@ const TransactionItem = styled.div`
   }
 `;
 
-const Amount = styled.span`
+const Amount = styled.span<{ refunded?: boolean }>`
   font-size: 1rem;
   font-weight: bold;
-  color: #16a34a;
+  color: ${({ refunded }) => (refunded ? "#dc2626" : "#16a34a")};
 `;
 
 const Description = styled.span`
@@ -107,7 +107,9 @@ export const TransactionRow = ({
   console.log(transaction.reason);
   return (
     <TransactionItem>
-      <Amount>{transaction.amount}€</Amount>
+      <Amount refunded={!!transaction.date_refunded}>
+        {transaction.amount}€
+      </Amount>
       <Status>{transaction.status}</Status>
       <Reason>{transaction.reason ?? ""}</Reason>
       <Description>{transaction.description}</Description>

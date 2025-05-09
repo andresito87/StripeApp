@@ -85,7 +85,6 @@ class WalletController extends Controller
                 ]);
 
                 $saldoTotal = Wallet::where('id_user', $user->id_user)
-                    ->whereNull('date_refunded')
                     ->where('status', 'succeeded')
                     ->sum('amount');
 
@@ -156,7 +155,7 @@ class WalletController extends Controller
             // Procesar reembolso en Stripe
             $refund = Refund::create([
                 'payment_intent' => $payment_intent_id,
-                'amount' => $request->amount * 100, // Convertir a centimos
+                'amount' => $request->amount * 100,
             ]);
 
             // Actualizar transacción en la base de datos
@@ -167,7 +166,6 @@ class WalletController extends Controller
 
             // Obtener el saldo actualizado
             $totalBalance = Wallet::where('id_user', $request->id_user)
-                ->whereNull('date_refunded')
                 ->where('status', 'succeeded')
                 ->sum('amount');
 
@@ -218,7 +216,6 @@ class WalletController extends Controller
         try {
             // Obtener el saldo del usuario autenticado
             $availableBalance = Wallet::where('id_user', $user->id_user)
-                ->whereNull('date_refunded')
                 ->where('status', 'succeeded')
                 ->sum('amount');
 
@@ -280,7 +277,6 @@ class WalletController extends Controller
 
             // Obtener el saldo actualizado
             $totalBalance = Wallet::where('id_user', $user->id_user)
-                ->whereNull('date_refunded')
                 ->where('status', 'succeeded')
                 ->sum('amount');
 
@@ -325,7 +321,6 @@ class WalletController extends Controller
 
         // Obtener el saldo actualizado del usuario
         $totalBalance = Wallet::where('id_user', $user->id_user)
-            ->whereNull('date_refunded')
             ->where('status', 'succeeded')
             ->sum('amount');
 
@@ -566,7 +561,6 @@ class WalletController extends Controller
 
         try {
             $availableBalance = Wallet::where('id_user', $user->id_user)
-                ->whereNull('date_refunded')
                 ->where('status', 'succeeded')
                 ->sum('amount');
 
@@ -609,8 +603,12 @@ class WalletController extends Controller
                 'id_refund' => $paymentIntent->id
             ]);
 
+            // Actualizar transacción en la base de datos
+            $transaction->date_refunded = now();
+            $transaction->id_wallet_type = 2;
+            $transaction->save();
+
             $totalBalance = Wallet::where('id_user', $user->id_user)
-                ->whereNull('date_refunded')
                 ->where('status', 'succeeded')
                 ->sum('amount');
 

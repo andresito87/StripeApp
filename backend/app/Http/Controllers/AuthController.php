@@ -159,7 +159,6 @@ class AuthController extends Controller
             $user = User::find($decoded->sub);
 
             $totalBalance = Wallet::where('id_user', $user->id_user)
-                ->whereNull('date_refunded')
                 ->where('status', 'succeeded')
                 ->sum('amount');
 

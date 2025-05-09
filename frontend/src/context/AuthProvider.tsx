@@ -1,7 +1,8 @@
 // src/context/AuthProvider.jsx
 import { useState, useEffect, useCallback } from "react";
 import api from "../services/api";
-import { AuthContext, User } from "./AuthContext";
+import { AuthContext } from "./AuthContext";
+import { User } from "@/types/user";
 import { AxiosError } from "axios";
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
