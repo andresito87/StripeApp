@@ -30,4 +30,4 @@ de Stripe en un proyecto React.
 
 ## Imagen de la app
 
-[![StripeApp](./stipeApp.png)](./stipeApp.png)
+[![StripeApp](./stripeApp.png)](./stripeApp.png)

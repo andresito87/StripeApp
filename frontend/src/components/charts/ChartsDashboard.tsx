@@ -4,8 +4,6 @@ import { useEffect, useState } from "react";
 import api from "../../services/api";
 import { Transaction } from "@/types/transaction";
 import BarChart from "./BarChart";
-import StreamChart from "./StreamChart";
-import RadialBarChart from "./RadialBarChart";
 
 const ChartsGrid = styled.div`
   display: grid;

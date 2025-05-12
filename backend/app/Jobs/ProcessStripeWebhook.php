@@ -140,6 +140,48 @@ class ProcessStripeWebhook implements ShouldQueue
                 ]);
         } elseif (
             isset($event['type'])
+            && $event['type'] === 'charge.dispute.created'
+            && isset($event['data']['object']['object'])
+            && $event['data']['object']['object'] === 'dispute'
+        ) {
+            $paymentIntent = $event['data']['object']['payment_intent'] ?? null;
+            $disputeId = $event['data']['object']['id'] ?? null;
+            $reason = $event['data']['object']['reason'] ?? 'Not specified';
+
+            if ($paymentIntent && $disputeId) {
+
+                // Actualiza que es una disputa
+                Wallet::where('id_transaction', $paymentIntent)
+                    ->update([
+                        'status' => 'disputed',
+                        'id_wallet_type_error' => 3,
+                    ]);
+
+                // Crear una nueva disputa
+                DisputedTransaction::where('dispute_id', $disputeId)
+                    ->update([
+                        'status' => 'pending',
+                        'reason' => $reason
+                    ]);
+                if (DisputedTransaction::where('dispute_id', $disputeId)->count() == 0) {
+                    DisputedTransaction::create([
+                        'dispute_id' => $disputeId,
+                        'payment_intent_id' => $paymentIntent,
+                        'reason' => $reason,
+                        'status' => 'pending'
+                    ]);
+                }
+                Log::error('Disputa creada', [
+                    'dispute_id' => $disputeId,
+                    'payment_intent_id' => $paymentIntent,
+                    'reason' => $reason,
+                    'status' => 'pending'
+                ]);
+            } else {
+                Log::error('No se encontró payment_intent o dispute_id en el evento de disputa.');
+            }
+        } elseif (
+            isset($event['type'])
             && $event['type'] === 'payment_intent.requires_action'
             && isset($event['data']['object']['id'])
         ) {
